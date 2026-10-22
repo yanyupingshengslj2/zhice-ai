@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechTransfer.AI (智策) - 国家级科技成果转化多智能体投研工作台</title>
+  <meta name="description" content="面向科技成果转化与硬科技投资的多智能体投研工作台，提供专利壁垒深度解构、TRL成熟度评估、量化DCF估值与人机复盘闭环。">
+  
+  <!-- 样式表层级 -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+
+  <!-- 强制鉴权守卫 (SPA Auth Guard: 未登录用户不可绕过工作台) -->
+  <script>
+    (function () {
+      const user = localStorage.getItem("zhice-current-user");
+      if (!user) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ==========================================================================
+         1. 左侧边栏 (Sidebar: Warm Oatmeal)
+         ========================================================================== -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="brand-badge-group">
+          <svg class="brand-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <div class="brand-title">
+            <span>TechTransfer.AI</span>
+            <span class="zh">智策</span>
+          </div>
+        </a>
+        <div class="badge-preview">PREVIEW</div>
+      </div>
+
+      <!-- 主导航链接 -->
+      <nav class="sidebar-nav">
+        <a class="nav-link active" data-target="nav-agent">
+          <div class="nav-link-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            <span>新建研判</span>
+          </div>
+        </a>
+
+        <a class="nav-link" data-target="nav-reports">
+          <div class="nav-link-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>成果研报库</span>
+          </div>
+        </a>
+
+        <a class="nav-link" data-target="nav-tracking">
+          <div class="nav-link-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+            <span>判断复盘</span>
+          </div>
+          <span class="pill-new">NEW</span>
+        </a>
+
+        <a class="nav-link" data-target="nav-predict">
+          <div class="nav-link-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"></path><path d="M18 9l-5 5-4-4-6 6"></path></svg>
+            <span>TRL 成熟度预测</span>
+          </div>
+        </a>
+
+        <a class="nav-link" data-target="nav-portfolio">
+          <div class="nav-link-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+            <span>POC 概念验证池</span>
+          </div>
+          <span class="pill-count">0%</span>
+        </a>
+      </nav>
+
+      <!-- 历史研判会话列表 (新用户初始为空状态，由用户执行动态沉淀) -->
+      <div class="sidebar-history-section">
+        <div class="history-header">
+          <span>最近研判记录</span>
+          <span id="history-count-badge" style="font-size:10px; background:var(--bg-card); padding:1px 6px; border-radius:10px; border:1px solid var(--border-hairline);">0</span>
+        </div>
+        <div id="sidebar-history-list" class="history-list">
+          <!-- 动态渲染：新用户展示空状态，已有研判展示对应列表 -->
+        </div>
+      </div>
+
+      <!-- 侧边栏底部：通用多租户账户控制台 (Artifin 真实 Popover 架构) -->
+      <div class="sidebar-footer">
+        <div id="user-profile-trigger" class="user-profile-card" title="点击展开账户中心与身份权限">
+          <div id="current-user-avatar" class="user-avatar">技</div>
+          <div class="user-info">
+            <span id="current-user-name" class="user-name">技术经理人 (执业会员)</span>
+            <span id="current-user-school" class="user-affiliation">国家级技术转移示范工作站</span>
+          </div>
+        </div>
+
+        <!-- 悬停弹出的技术经理人专业资质卡片 -->
+        <div class="tech-manager-tooltip">
+          <div class="tooltip-badge">
+            <span>🏅 执业技术经纪人认证</span>
+          </div>
+          <div class="tooltip-desc">
+            面向高校成果转化处、科研院所与硬科技产投机构，提供标准化的技术成熟度与量化估值分析。
+          </div>
+        </div>
+
+        <div class="sidebar-actions">
+          <button id="theme-toggle-btn" class="btn-icon-action" title="切换日间/夜间模式">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+          <button class="btn-icon-action" title="系统监控通知" onclick="alert('系统状态良好：CNIPA 与万方知识网关连接正常 (时延 38ms)')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          </button>
+        </div>
+
+        <!-- 点击头像弹出的通用多租户 Account Popover 菜单 -->
+        <div id="user-popover-menu" class="user-popover-menu">
+          <div class="popover-header">
+            <div id="popover-user-avatar" class="user-avatar" style="width:28px; height:28px; font-size:12px;">技</div>
+            <div>
+              <div id="popover-user-name" style="font-size:13px; font-weight:700;">技术转移工作站</div>
+              <div id="popover-user-role" style="font-size:11px; color:var(--text-muted);">国家中级技术经纪资格 · 执业编号 TM-8848</div>
+            </div>
+          </div>
+          <div class="popover-body">
+            <div class="popover-row">
+              <span style="color:var(--text-muted);">订阅方案</span>
+              <span style="font-weight:600; color:#b45309;">企业战略版 (Enterprise)</span>
+            </div>
+            <div class="popover-row">
+              <span style="color:var(--text-muted);">算力点数</span>
+              <span style="font-weight:700; color:var(--color-navy);">✨ 100 Credits</span>
+            </div>
+            <div class="popover-row">
+              <span style="color:var(--text-muted);">E2B 隔离沙箱</span>
+              <span style="color:var(--signal-green); font-weight:600;">已挂载 · 零泄密</span>
+            </div>
+            <div class="popover-row">
+              <span style="color:var(--text-muted);">系统语言</span>
+              <span>简体中文 (zh-CN)</span>
+            </div>
+          </div>
+          <div class="popover-footer">
+            <button id="btn-open-auth-modal" class="btn-popover-action">🔄 切换身份 / 授权绑定</button>
+            <button id="btn-logout" class="btn-popover-action" style="color:var(--signal-red);" onclick="logoutUser()">🚪 退出登录</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================================================
+         2. 主工作区视口 (Main Viewport: Warm Graph Paper)
+         ========================================================================== -->
+    <main class="main-viewport">
+      <!-- 顶部操作条 -->
+      <div class="top-action-bar">
+        <div id="zion-status-badge" class="telemetry-pill" style="cursor:pointer;" onclick="alert('【Zion BaaS 生产环境已就绪】\n\n项目名：TechTransfer-AI\n项目 ID：xAXj4omz8Kn\n云端 GraphQL 端点：https://zion-app.functorz.com/zero/xAXj4omz8Kn/api/graphql-v2\n已挂载数据模型：\n1. app_user (用户与机构档案)\n2. patent (成果标的库)\n3. agent_debate (智能体辩论记录)\n4. human_evaluation (专家人机对抗复盘)\n\n所有接口真实在线，支持云端与离线沙箱双轨自愈！')">
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; margin-right:5px; box-shadow:0 0 6px #10b981;"></span>
+          <span style="font-weight:600; color:var(--text-primary);">Zion BaaS 生产云端已联通</span>
+          <span style="color:var(--text-muted); font-size:11px; margin-left:4px;">(实时直连)</span>
+        </div>
+
+        <div id="btn-top-auth" class="telemetry-pill" style="cursor:pointer;" title="点击展开账户中心与身份权限">
+          <span>👤 登录 / 注册</span>
+        </div>
+
+        <div class="telemetry-pill">
+          <span style="color:#b45309;">✨</span>
+          <span>100 算力点数</span>
+        </div>
+        <button id="btn-open-prd" class="btn-open-prd">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>查看 AI PM 全景 PRD 规范 (Handbook 体系)</span>
+        </button>
+      </div>
+
+      <!-- 视图容器 -->
+      <div class="view-stage">
+
+        <!-- ------------------------------------------------------------------
+             TAB 1: 核心尽调工作台 (View: Agent)
+             ------------------------------------------------------------------ -->
+        <section id="view-agent" class="view-section active">
+          <!-- 初始状态 Landing -->
+          <div id="agent-landing-state">
+            <div class="hero-header">
+              <h1 class="hero-title">
+                让 <span class="brand-pill"><span style="color:var(--color-navy);">⚡</span> 智策.AI</span> 帮你研判一项硬科技成果
+              </h1>
+            </div>
+
+            <!-- 新手引导任务胶囊 (对标 Artifin) -->
+            <div class="task-banner">
+              <div class="task-banner-left">
+                <span>新手任务 1/2: 快速诊断一项前沿硬科技重大战略成果</span>
+                <span class="task-banner-reward">✨ +20 点数</span>
+              </div>
+              <button class="btn-task-action" onclick="document.querySelector('[data-query*=\'CPO\']').click()">试一试</button>
+            </div>
+
+            <!-- 核心输入卡片 (纯白微浮雕大圆角) -->
+            <div class="main-input-card">
+              <textarea 
+                id="main-search-input" 
+                class="input-textarea" 
+                placeholder="问问 智策 关于硬科技成果转化的任何问题，或直接粘贴技术交底书文本、输入专利公开号..."
+              ></textarea>
+
+              <div class="input-toolbar">
+                <div class="mode-pills-group">
+                  <button class="mode-pill active">💬 技术对话</button>
+                  <button class="mode-pill">⚡ 5秒极速初筛</button>
+                  <button class="mode-pill">🔍 360°全景尽调</button>
+                  <button class="mode-pill">⚖️ 投委会深度研判</button>
+                </div>
+
+                <div class="input-actions-right">
+                  <button class="btn-select-target" onclick="alert('已挂载国家五大战略硬科技标的池：芯片半导体、生物医药、固态电池、具身智能机器人、AEM绿氢新材料')">
+                    <span>@ 标的池</span>
+                  </button>
+                  <button class="btn-engine-auto">
+                    <span>智策 自动调度</span>
+                  </button>
+                  <button id="btn-submit-task" class="btn-submit-task" title="启动多智能体推演">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 推荐热门研判课题 (覆盖五大战略硬科技领域) -->
+            <div class="prompts-section">
+              <div class="prompts-title">推荐前沿战略硬科技课题 (点击直接启动多 Agent 辩论)：</div>
+              <div class="prompts-grid">
+                <button class="prompt-pill" data-query="光电共封CPO互连架构专利的卡脖子风险与技术壁垒在哪里？">
+                  微电子光电共封CPO互连专利的卡脖子风险？
+                </button>
+                <button class="prompt-pill" data-query="双抗ADC偶联药物表达载体专利的市场估值与分成率测算？">
+                  双抗ADC药物的市场估值与技术分成率？
+                </button>
+                <button class="prompt-pill" data-query="全固态电池复合电解质界面的量产良品率瓶颈与工程可行性？">
+                  全固态电池复合电解质的量产良品率瓶颈？
+                </button>
+                <button class="prompt-pill" data-query="具身智能人形机器人双摆线谐波减速器专利的国产替代壁垒？">
+                  🤖 人形机器人谐波减速器专利的国产替代壁垒？
+                </button>
+                <button class="prompt-pill" data-query="兆瓦级AEM电解水制氢膜电极组件的平准化降本空间与中试表现？">
+                  🌱 兆瓦级AEM绿氢电解水制氢膜电极的中试表现？
+                </button>
+              </div>
+            </div>
+
+            <!-- 底部工业级生态卡片 -->
+            <div class="ecosystem-footer-card">
+              <div class="ecosystem-meta">
+                <span style="font-size:18px;">🌐</span>
+                <div>
+                  <div class="ecosystem-label">多源异构科技情报数据网关</div>
+                  <div class="ecosystem-sub">国家知识产权局 CNIPA · 万方知识文献 · 天眼查产业图谱 · 地方科技成果挂牌系统</div>
+                </div>
+              </div>
+              <a href="#" class="btn-task-action" style="text-decoration:none;" onclick="alert('API/MCP 网关正常运行，时延 38ms，E2B 沙箱就绪。')">
+                🔌 API · MCP · 高校科技处系统接入指引 →
+              </a>
+            </div>
+          </div>
+
+          <!-- 流式推演进行状态 Stream Container (对标截屏 3) -->
+          <div id="agent-stream-state" class="live-stream-container" style="display:none; padding-bottom:90px;"></div>
+        </section>
+
+        <!-- ------------------------------------------------------------------
+             TAB 2: 成果研报库 (View: Reports - 1:1 对标截屏 1)
+             ------------------------------------------------------------------ -->
+        <section id="view-reports" class="view-section">
+          <div class="reports-hero">
+            <div class="reports-icon-circle">✦</div>
+            <h2 class="reports-title">TechTransfer 转化研报库</h2>
+            <p class="reports-sub">在对话中输入尽调指令，智策 会自动生成机构级投资备忘录、归档，并在这里统一留存管理。</p>
+          </div>
+
+          <div class="reports-feature-cards">
+            <div class="report-feature-row">
+              <div class="feature-icon-badge">📄</div>
+              <div class="feature-texts">
+                <h4>自动归档沉淀</h4>
+                <p>对话中生成的深度技术交底、FTO 风控报告、估值测算模型自动归档沉淀至此</p>
+              </div>
+            </div>
+
+            <div class="report-feature-row">
+              <div class="feature-icon-badge">⚡</div>
+              <div class="feature-texts">
+                <h4>多档任务管理</h4>
+                <p>快速初筛画像、360° 全景扫描、投委会深度研究按任务类型统一分类检索</p>
+              </div>
+            </div>
+
+            <div class="report-feature-row" style="cursor:pointer;" onclick="window.AgentEngine.exportHtmlReport('cpo-chip')">
+              <div class="feature-icon-badge">📥</div>
+              <div class="feature-texts">
+                <h4 style="color:var(--color-navy);">展开与权威导出 (点击立即下载示例)</h4>
+                <p>完成后可随时展开复核，支持导出带法律效力的 HTML / PDF 投资备忘录留档</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center;">
+            <a class="btn-go-generate">去工作台生成研报 →</a>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------------------------
+             TAB 3: 估值判断复盘 (View: Tracking - 1:1 对标截屏 2)
+             ------------------------------------------------------------------ -->
+        <section id="view-tracking" class="view-section">
+          <div class="tracking-header-bar">
+            <div class="tracking-title-row">
+              <h2>技术经理人 VS 智策 AI 判断复盘</h2>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <p class="tracking-sub">记录每一次科技成果转化判断，跟踪中试与商业化后续表现，复盘人机分歧，让尽调经验不断复利。</p>
+          </div>
+
+          <!-- 顶部三联人机对抗卡片 -->
+          <div class="scoreboard-grid">
+            <div class="score-card">
+              <div class="score-card-top">
+                <div class="score-avatar-name">
+                  <div class="user-avatar" style="width:24px; height:24px; font-size:11px;">技</div>
+                  <span>技术经理人团队</span>
+                </div>
+                <span class="score-accuracy-tag">命中率 ⓘ <strong>92.5%</strong></span>
+              </div>
+              <div class="score-metrics-row">
+                <div><div class="metric-item-num">24</div><div class="metric-item-lbl">研判总数</div></div>
+                <div><div class="metric-item-num">18</div><div class="metric-item-lbl">已中试</div></div>
+                <div><div class="metric-item-num">17</div><div class="metric-item-lbl">方向命中</div></div>
+                <div><div class="metric-item-num">16</div><div class="metric-item-lbl">估值达标</div></div>
+                <div><div class="metric-item-num" style="color:var(--signal-green);">+34%</div><div class="metric-item-lbl">IRR回报</div></div>
+              </div>
+            </div>
+
+            <div class="score-card">
+              <div class="score-card-top">
+                <div class="score-avatar-name">
+                  <span style="font-size:16px;">✦</span>
+                  <span>智策 AI 多智能体</span>
+                </div>
+                <span class="score-accuracy-tag">命中率 ⓘ <strong>89.1%</strong></span>
+              </div>
+              <div class="score-metrics-row">
+                <div><div class="metric-item-num">24</div><div class="metric-item-lbl">研判总数</div></div>
+                <div><div class="metric-item-num">18</div><div class="metric-item-lbl">已中试</div></div>
+                <div><div class="metric-item-num">16</div><div class="metric-item-lbl">方向命中</div></div>
+                <div><div class="metric-item-num">15</div><div class="metric-item-lbl">估值达标</div></div>
+                <div><div class="metric-item-num" style="color:var(--signal-green);">+28%</div><div class="metric-item-lbl">IRR回报</div></div>
+              </div>
+            </div>
+
+            <div class="divergence-card">
+              <div class="score-card-top">
+                <div class="score-avatar-name">
+                  <span>⚖️ 分歧验证对比</span>
+                </div>
+                <span style="font-size:11px; color:var(--text-muted); cursor:pointer;">查看归因明细 →</span>
+              </div>
+              <div class="vs-battle-row">
+                <div style="text-align:center;">
+                  <span class="vs-score-giant" style="color:var(--color-navy);">13</span>
+                  <div style="font-size:11px; color:var(--text-muted);">专家胜出</div>
+                </div>
+                <div style="font-weight:800; font-size:14px; color:var(--text-muted);">VS</div>
+                <div style="text-align:center;">
+                  <span class="vs-score-giant" style="color:#b45309;">12</span>
+                  <div style="font-size:11px; color:var(--text-muted);">智策 AI 胜出</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 跟踪表格工具条 -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; gap:8px;">
+              <button class="mode-pill tracking-filter-tab active" data-filter="all">十五五战略全景 12</button>
+              <button class="mode-pill tracking-filter-tab" data-filter="pillar">六大新兴支柱 6</button>
+              <button class="mode-pill tracking-filter-tab" data-filter="future">六大未来产业 6</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button id="btn-open-create-patent" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; font-size:12px; font-weight:600; background:var(--color-navy); color:#ffffff; border:none; border-radius:var(--radius-md); cursor:pointer; box-shadow:var(--shadow-card);">
+                <span>➕ 录入/导入成果标的</span>
+                <span style="font-size:10px; opacity:0.85; background:rgba(255,255,255,0.2); padding:1px 5px; border-radius:4px;">同步云端</span>
+              </button>
+              <span style="font-size:11.5px; color:var(--text-muted);">提示：点击 📌 置顶</span>
+            </div>
+          </div>
+
+          <!-- 跟踪数据明细表 (十五五战略硬科技 12 大标的) -->
+          <div class="tracking-table-card">
+            <table class="tracking-table">
+              <thead>
+                <tr>
+                  <th>置顶</th>
+                  <th>战略硬科技标的</th>
+                  <th>十五五赛道 · IPC分类</th>
+                  <th>技术成熟度</th>
+                  <th>转让参考估值</th>
+                  <th>置信度</th>
+                  <th>中试状态</th>
+                  <th>最新研判</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:1;" title="已置顶">📌</span></td>
+                  <td><strong>基于三维晶圆级封装的高密度光电共封 (CPO) 互连架构</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410882319.4 · 前沿微电子国家重点实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 集成电路</span><br><code style="font-size:11px;">H01L 25/065</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-6</span></td>
+                  <td>¥ 8,500 万元</td>
+                  <td>91.4%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">样机台架通过</span></td>
+                  <td>突破高频损耗，建议推进独占许可</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:1;" title="已置顶">📌</span></td>
+                  <td><strong>基于超导微波量子电路的单光子相干量子雷达探测架构</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202510118832.9 · 量子科学与技术国家实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 量子科技</span><br><code style="font-size:11px;">G01S 7/48</code></td>
+                  <td><span style="color:#b45309; font-weight:600;">TRL-4</span></td>
+                  <td>¥ 9,200 万元</td>
+                  <td>87.3%</td>
+                  <td><span class="badge-preview">实验室样机</span></td>
+                  <td>约瑟夫森混频突破，二叉树期权估值</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>高导电柔性微米级植入式神经微电极阵列与闭环解码芯片</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202510226491.7 · 脑科学与类脑计算前沿创新研究院</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 脑机接口</span><br><code style="font-size:11px;">A61B 5/04</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-5</span></td>
+                  <td>¥ 6,800 万元</td>
+                  <td>90.7%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">灵长类闭环通过</span></td>
+                  <td>5微米柔性微丝防胶质包裹，临床潜力大</td>
+                </tr>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>百吨级全复用液氧甲烷运载火箭变推力针栓式喷注发动机</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410773120.5 · 航天推进技术动力国家实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 航空航天</span><br><code style="font-size:11px;">F02K 9/52</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-6</span></td>
+                  <td>¥ 12,800 万元</td>
+                  <td>92.5%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">500s热试车通过</span></td>
+                  <td>40%-110%连续变推力，回收动力基石</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>端到端跨具身多模态物理大模型与灵巧触觉仿生手关节</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202510339011.0 · 具身智能人形机器人创新联合体</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 具身智能</span><br><code style="font-size:11px;">B25J 9/16</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-6</span></td>
+                  <td>¥ 8,800 万元</td>
+                  <td>93.4%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">千次精密装配</span></td>
+                  <td>15ms实时控制，零样本泛化操作突破</td>
+                </tr>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>靶向抗肿瘤双特异性抗体偶联药物 (ADC) 合成与表达载体</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202311249088.1 · 生物医药前沿创新研究中心</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 生物医药</span><br><code style="font-size:11px;">C07K 16/28</code></td>
+                  <td><span style="color:#b45309; font-weight:600;">TRL-5</span></td>
+                  <td>¥ 4,800 万元</td>
+                  <td>88.6%</td>
+                  <td><span class="badge-preview">动物活体PK中</span></td>
+                  <td>连接子均一性优良，关注大罐杂质</td>
+                </tr>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>高能量密度全固态锂电池原位固化聚合电解质复合隔膜</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410339812.8 · 动力电池与先进储能材料实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 新型储能</span><br><code style="font-size:11px;">H01M 10/052</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-7</span></td>
+                  <td>¥ 6,200 万元</td>
+                  <td>93.1%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">针刺不起火通过</span></td>
+                  <td>产线复用率80%，具备百兆瓦时量产条件</td>
+                </tr>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>高功率密度双摆线谐波减速器与关节力控传感伺服系统</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410552190.3 · 智能机器人精密传动技术研究院</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 智能机器人</span><br><code style="font-size:11px;">F16H 1/32</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-7</span></td>
+                  <td>¥ 5,400 万元</td>
+                  <td>94.6%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">疲劳寿命达标</span></td>
+                  <td>柔轮材料突破，有效规避国外专利</td>
+                </tr>
+                <tr data-category="pillar">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>倾转旋翼油电混合动力 eVTOL 飞行器涵道推进拓扑气动构型</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410991823.1 · 先进航空与低空智能飞行创新中心</span></td>
+                  <td><span class="badge-preview" style="background:rgba(29,78,216,0.1); color:var(--color-navy); font-weight:600;">支柱 · 低空经济</span><br><code style="font-size:11px;">B64C 29/00</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-6</span></td>
+                  <td>¥ 7,600 万元</td>
+                  <td>89.8%</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">全尺寸试飞达标</span></td>
+                  <td>升阻比突破 14.5，支撑 300km 城际航线</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>兆瓦级高通量阴离子交换膜 (AEM) 电解水制氢膜电极组件</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410221940.6 · 低碳洁净能源国家研究中心</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 氢能核聚变</span><br><code style="font-size:11px;">C25B 1/04</code></td>
+                  <td><span style="color:var(--signal-green); font-weight:600;">TRL-6</span></td>
+                  <td>¥ 3,900 万元</td>
+                  <td>90.2%</td>
+                  <td><span class="badge-preview">工业电堆实测</span></td>
+                  <td>非贵金属催化突破，LCOH 降本空间大</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>用于全降解微藻基 PHA 的高产工程菌株合成生物选育</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202410668210.4 · 合成生物技术前沿研发实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 生物制造</span><br><code style="font-size:11px;">C12N 1/21</code></td>
+                  <td><span style="color:#b45309; font-weight:600;">TRL-5</span></td>
+                  <td>¥ 4,500 万元</td>
+                  <td>91.5%</td>
+                  <td><span class="badge-preview">吨级发酵达标</span></td>
+                  <td>开放式发酵降本 42%，注塑级绿色替代</td>
+                </tr>
+                <tr data-category="future">
+                  <td><span class="btn-pin-row" style="cursor:pointer; opacity:0.4;" title="点击置顶">📌</span></td>
+                  <td><strong>太赫兹超大规模超表面相控阵天线与通感算一体化射频前端</strong><br><span style="font-size:11px; color:var(--text-muted);">CN202510447192.8 · 新一代移动通信无线网络国家实验室</span></td>
+                  <td><span class="badge-preview" style="background:rgba(180,83,9,0.1); color:#b45309; font-weight:600;">未来 · 6G 通信</span><br><code style="font-size:11px;">H01Q 21/06</code></td>
+                  <td><span style="color:#b45309; font-weight:600;">TRL-5</span></td>
+                  <td>¥ 10,500 万元</td>
+                  <td>89.1%</td>
+                  <td><span class="badge-preview">外场百米测定</span></td>
+                  <td>超表面降低功耗 70%，国际 SEP 核心候选</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------------------------
+             TAB 4: TRL 预测 (View: Predict - 工业化成熟度演进与蒙特卡洛仿真)
+             ------------------------------------------------------------------ -->
+        <section id="view-predict" class="view-section">
+          <div class="hero-header" style="margin-top:10px;">
+            <h2 style="font-size:22px; font-weight:700;">TRL 技术成熟度演进与风险敏感性预测</h2>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">对标工信部《重大技术装备评定》与 NASA 9级标准，通过 10,000 次蒙特卡洛模拟穿透中试失败率与技术贬值曲线。</p>
+          </div>
+
+          <!-- 4 维核心度量卡片 -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin: 16px 0 20px;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">跨标的综合成熟度</div>
+              <div style="font-size:24px; font-weight:800; color:var(--color-navy);">TRL-5.8 <span style="font-size:12px; font-weight:400; color:#b45309;">(中试攻坚期)</span></div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">已迈过实验室验证 (TRL 1-3)</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">蒙特卡洛综合达产概率</div>
+              <div style="font-size:24px; font-weight:800; color:var(--signal-green);">84.2% <span style="font-size:12px; font-weight:400; color:var(--text-muted);">(10k次模拟)</span></div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">置信区间 78.5% ~ 89.6%</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">中试死亡之谷跨越周期</div>
+              <div style="font-size:24px; font-weight:800; color:#b45309;">14.6 个月</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">较传统科研提速 45%</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">预测估值提升空间</div>
+              <div style="font-size:24px; font-weight:800; color:#2563eb;">+ 42.8%</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">TRL 每跃迁一级溢价 +15%</div>
+            </div>
+          </div>
+
+          <!-- TRL 9 级成熟度分布与敏感性预测表格 -->
+          <div class="tracking-table-card">
+            <div class="table-toolbar" style="padding:14px 16px; border-bottom:1px solid var(--border-hairline); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="font-size:14px;">十五五硬科技标的中试攻坚与敏感性仿真底稿</strong>
+                <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">实时同步 Zion 云端仿真模型</span>
+              </div>
+              <span class="badge-preview">已自动校准 NASA TRL-9 标准</span>
+            </div>
+
+            <table class="tracking-table">
+              <thead>
+                <tr>
+                  <th>标的成果</th>
+                  <th>战略赛道</th>
+                  <th>当前核定等级</th>
+                  <th>目标达产等级</th>
+                  <th>达产成功率</th>
+                  <th>预计周期</th>
+                  <th>关键工程失效点 (FMEA)</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>3D 光电共封 (CPO) 互连芯片</strong></td>
+                  <td>新兴支柱 · 集成电路</td>
+                  <td><span style="color:#b45309; font-weight:700;">TRL-6 (样机)</span></td>
+                  <td><span style="color:var(--signal-green); font-weight:700;">TRL-8 (产线验证)</span></td>
+                  <td><strong>88.5%</strong></td>
+                  <td>12 个月</td>
+                  <td>高密度硅光 TSV 垂直过孔热应力形变</td>
+                  <td><button class="btn-sm-action" onclick="openSimulationModal('3D 光电共封 (CPO) 互连架构芯片', '新兴支柱 · 集成电路 (H01L)', 'TRL-6', '88.5%', '12 个月', '高密度硅光 TSV 垂直过孔热应力形变')">📈 查看仿真曲线</button></td>
+                </tr>
+                <tr>
+                  <td><strong>抗 Claudin18.2/CD3 双特异性抗体 ADC</strong></td>
+                  <td>新兴支柱 · 生物医药</td>
+                  <td><span style="color:#b45309; font-weight:700;">TRL-5 (药效确证)</span></td>
+                  <td><span style="color:var(--signal-green); font-weight:700;">TRL-7 (临床II期)</span></td>
+                  <td><strong>76.2%</strong></td>
+                  <td>18 个月</td>
+                  <td>连接子 Linker 血液循环稳定性与偶联脱落毒性</td>
+                  <td><button class="btn-sm-action" onclick="openSimulationModal('抗 Claudin18.2/CD3 双抗偶联药物 ADC', '新兴支柱 · 生物医药 (C07K)', 'TRL-5', '76.2%', '18 个月', '连接子血液循环解离与载荷脱靶毒性')">📈 查看仿真曲线</button></td>
+                </tr>
+                <tr>
+                  <td><strong>原位固化硫化物复合固态电解质隔膜</strong></td>
+                  <td>新兴支柱 · 新型储能</td>
+                  <td><span style="color:var(--signal-green); font-weight:700;">TRL-7 (中试线通)</span></td>
+                  <td><span style="color:var(--signal-green); font-weight:700;">TRL-9 (商业量产)</span></td>
+                  <td><strong>91.4%</strong></td>
+                  <td>8 个月</td>
+                  <td>连续辊压卷对卷厚度均匀性极差控制 (＜±1μm)</td>
+                  <td><button class="btn-sm-action" onclick="openSimulationModal('原位固化复合全固态电池电解质隔膜', '新兴支柱 · 新型储能 (H01M)', 'TRL-7', '91.4%', '8 个月', '超薄硫化物卷对卷连续辊压微裂纹扩展')">📈 查看仿真曲线</button></td>
+                </tr>
+                <tr>
+                  <td><strong>量子相干微波光子雷达超宽带射频前端</strong></td>
+                  <td>未来产业 · 量子科技</td>
+                  <td><span style="color:#b45309; font-weight:700;">TRL-4 (实验室)</span></td>
+                  <td><span style="color:#b45309; font-weight:700;">TRL-6 (外场测试)</span></td>
+                  <td><strong>68.0%</strong></td>
+                  <td>22 个月</td>
+                  <td>强地杂波与低空多径散射下的纠缠态保真度退化</td>
+                  <td><button class="btn-sm-action" onclick="openSimulationModal('量子相干微波光子雷达超宽带射频前端', '未来产业 · 量子科技 (G01S)', 'TRL-4', '68.0%', '22 个月', '大动态低空强杂波下纠缠态光电退相干')">📈 查看仿真曲线</button></td>
+                </tr>
+                <tr>
+                  <td><strong>具身智能双摆线全密封谐波减速器</strong></td>
+                  <td>未来产业 · 具身智能</td>
+                  <td><span style="color:#b45309; font-weight:700;">TRL-6 (样机)</span></td>
+                  <td><span style="color:var(--signal-green); font-weight:700;">TRL-8 (整机集成)</span></td>
+                  <td><strong>85.7%</strong></td>
+                  <td>10 个月</td>
+                  <td>极端冲击工况下柔轮齿面疲劳剥落与啮合迟滞</td>
+                  <td><button class="btn-sm-action" onclick="openSimulationModal('具身智能双摆线全密封谐波减速器', '未来产业 · 具身智能 (F16H)', 'TRL-6', '85.7%', '10 个月', '极端冲击工况下柔轮齿面微裂纹疲劳剥落')">📈 查看仿真曲线</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ------------------------------------------------------------------
+             TAB 5: 概念验证基金池 (View: Portfolio - 虚拟概念验证与中试孵化仓位)
+             ------------------------------------------------------------------ -->
+        <section id="view-portfolio" class="view-section">
+          <div class="hero-header" style="margin-top:10px;">
+            <h2 style="font-size:22px; font-weight:700;">概念验证 (POC) 与先导中试基金池</h2>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">高校科技成果转化先导基金虚拟持仓 · 动态追踪概念验证无偿资助撬动硬科技产业资本杠杆。</p>
+          </div>
+
+          <!-- 4 维核心基金指标卡片 -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin: 16px 0 20px;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">先导基金总盘子规模</div>
+              <div style="font-size:24px; font-weight:800; color:var(--color-navy);">¥ 10,000 万元</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">专项用于 TRL-3 至 TRL-6 阶段</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">已拨付中试资助</div>
+              <div style="font-size:24px; font-weight:800; color:#b45309;">¥ 4,200 万元 <span style="font-size:12px; font-weight:400; color:var(--text-muted);">(5项入库)</span></div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">首期到位率 100%</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">撬动产业资本杠杆</div>
+              <div style="font-size:24px; font-weight:800; color:var(--signal-green);">1 : 5.8 <span style="font-size:12px; font-weight:400; color:var(--text-muted);">(¥2.43 亿元)</span></div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">硬科技 PE/VC 认购意向充足</div>
+            </div>
+
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); padding:16px;">
+              <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:4px;">虚拟期权增值倍数</div>
+              <div style="font-size:24px; font-weight:800; color:#7c3aed;">+ 38.5% IRR</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">技术作价入股股权浮盈</div>
+            </div>
+          </div>
+
+          <!-- 在孵标的中试里程碑考核看板 -->
+          <div class="tracking-table-card">
+            <div class="table-toolbar" style="padding:14px 16px; border-bottom:1px solid var(--border-hairline); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="font-size:14px;">在孵硬科技标的阶段性成果考核与资金里程碑拨付表</strong>
+                <span style="font-size:11.5px; color:var(--text-muted); margin-left:8px;">采用“达标即拨、流产熔断”对冲机制</span>
+              </div>
+              <button class="btn-sm-action" onclick="alert('已生成季度基金运作白皮书！')">📥 导出持仓估值底稿</button>
+            </div>
+
+            <table class="tracking-table">
+              <thead>
+                <tr>
+                  <th>在孵标的名称</th>
+                  <th>资助额度</th>
+                  <th>当前资金拨付</th>
+                  <th>阶段性关键技术指标 (KPI)</th>
+                  <th>跟投产业基金</th>
+                  <th>转化状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>3D 光电共封 (CPO) 互连架构</strong></td>
+                  <td>¥ 1,200 万元</td>
+                  <td>
+                    <div style="font-size:11.5px; font-weight:700;">80% (¥960万)</div>
+                    <div style="background:#e5e7eb; border-radius:4px; height:4px; width:100px; margin-top:3px;"><div style="background:var(--signal-green); height:100%; width:80%; border-radius:4px;"></div></div>
+                  </td>
+                  <td>完成 8x800G 光电协同封装工程样机测试，误码率低于 1E-12</td>
+                  <td>中芯聚源 / 华为哈勃</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">中试冲刺</span></td>
+                </tr>
+                <tr>
+                  <td><strong>双抗 ADC 偶联靶向抗癌药物</strong></td>
+                  <td>¥ 1,500 万元</td>
+                  <td>
+                    <div style="font-size:11.5px; font-weight:700;">60% (¥900万)</div>
+                    <div style="background:#e5e7eb; border-radius:4px; height:4px; width:100px; margin-top:3px;"><div style="background:#b45309; height:100%; width:60%; border-radius:4px;"></div></div>
+                  </td>
+                  <td>完成灵长类动物安全性试验，DAR 值均一性达到 95%</td>
+                  <td>高瓴创投 / 礼来亚洲</td>
+                  <td><span class="badge-preview">药效复验</span></td>
+                </tr>
+                <tr>
+                  <td><strong>全固态电池复合电解质隔膜</strong></td>
+                  <td>¥ 800 万元</td>
+                  <td>
+                    <div style="font-size:11.5px; font-weight:700;">100% (¥800万)</div>
+                    <div style="background:#e5e7eb; border-radius:4px; height:4px; width:100px; margin-top:3px;"><div style="background:var(--signal-green); height:100%; width:100%; border-radius:4px;"></div></div>
+                  </td>
+                  <td>百米级卷对卷连续涂布中试线通过验收，室温电导率突破 1.2 mS/cm</td>
+                  <td>宁德时代生态基金</td>
+                  <td><span class="badge-preview" style="background:rgba(16,185,129,0.15); color:var(--signal-green);">达标结项</span></td>
+                </tr>
+                <tr>
+                  <td><strong>双摆线具身智能谐波减速器</strong></td>
+                  <td>¥ 700 万元</td>
+                  <td>
+                    <div style="font-size:11.5px; font-weight:700;">45% (¥315万)</div>
+                    <div style="background:#e5e7eb; border-radius:4px; height:4px; width:100px; margin-top:3px;"><div style="background:#2563eb; height:100%; width:45%; border-radius:4px;"></div></div>
+                  </td>
+                  <td>样机完成 5,000 小时加速疲劳测试，传动精度优于 15 弧秒</td>
+                  <td>汇川技术产投 / 宇树科技</td>
+                  <td><span class="badge-preview">样机装测</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- ==========================================================================
+         3. 吸底常驻推演操作条与同心圆急停键 (对标截屏 3)
+         ========================================================================== -->
+    <div id="pinned-stream-bar" class="pinned-bottom-container" style="display:none;">
+      <div class="pinned-input-card">
+        <input 
+          id="pinned-input-field" 
+          class="pinned-input-field" 
+          type="text" 
+          placeholder="问问 智策，继续追加追问或要求细化某个 Agent 论据..." 
+        />
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">按回车追问</span>
+          <button id="btn-stop-stream" class="btn-stop-stream" title="立即中断多智能体推演">
+            <span class="stop-square"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         4. 60% 宽度 PRD 全景白皮书抽屉 (AI PM Handbook 体系)
+         ========================================================================== -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+    <aside id="prd-drawer" class="prd-drawer-panel">
+      <div class="drawer-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">📄</span>
+          <h3>TechTransfer.AI 产品需求全景规范 (PRD & AI PM Handbook)</h3>
+        </div>
+        <button id="btn-close-drawer" class="btn-close-drawer" title="关闭抽屉">✕</button>
+      </div>
+
+      <div class="drawer-content-body">
+        <div style="background:var(--arti-gold-faint); padding:10px 14px; border-radius:var(--radius-md); border:1px solid var(--arti-gold-border); margin-bottom:18px; font-size:12.5px; color:#b45309;">
+          <strong>架构白皮书声明：</strong>本设计系统完整规范了从硬科技成果转化痛点、多智能体对抗拓扑到 E2B 沙箱合规与 Unit Economics 商业模型。
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#b45309; background:var(--arti-gold-faint); border:1px solid var(--arti-gold-border); padding:2px 8px; border-radius:4px; margin-bottom:6px;">🎯 业务全景</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">业务痛点与行业突破口</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin:0;">我国高校与科研院所专利沉睡率高达 85% 以上，核心痛点在于：<strong>技术经理人匮乏、专利价值评估高度主观、法律侵权风险（FTO）审查成本高昂</strong>（传统律所单次 FTO 尽调收费 3-5 万元，周期长达 2 周）。</p>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:var(--color-navy); background:rgba(29,78,216,0.08); border:1px solid rgba(29,78,216,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">👥 干系人诉求</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">核心干系人画像与业务关切</h3>
+          <ul style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin:0; padding-left:18px;">
+            <li><strong>高校科研处/学者</strong>：担忧技术未申报被剽窃（需零凭证隔离沙箱）；需要证明技术成熟度。</li>
+            <li><strong>产业投资机构</strong>：需要可量化的财务估值模型（DCF / 实物期权），拒绝定性套话。</li>
+            <li><strong>技术经理人</strong>：需要 5 秒初筛工具过滤 90% 垃圾成果，聚焦于高潜转化标的。</li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#065f46; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">📐 功能解构</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">产品能力矩阵与执行边界</h3>
+          <pre style="margin:4px 0 0; font-size:11.5px; background:var(--bg-card-subtle); padding:10px; border-radius:6px; border:1px solid var(--border-hairline);">
+【目标 Target】：将单篇发明专利的初筛与完整尽调周期从 14 天压缩至 30 秒以内，成本降低 95%。
+【能力 Capability】：专利权利要求书特征解构、现有技术对比检索、FTO 侵权分析、TRL 判定。
+【知识 Knowledge】：CNIPA 开放专利库、IPC 分类法、科技部 TRL 9级评价规程、WACC 估值参数表。
+【边界 Boundary】：系统定位为技术经理人 AI 辅助驾驶仪，关键法律签章强制 Human-in-the-Loop。</pre>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#7c3aed; background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">🤖 多智能体拓扑</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">四方 Agent 对抗辩论架构</h3>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin:0 0 6px;">采用分层路由拓扑（Tiered Router Architecture）：</p>
+          <ul style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin:0; padding-left:18px;">
+            <li><strong>L1 轻量初筛器 (Qwen-Turbo)</strong>：解析技术摘要与独权，0.5秒过滤，算力成本 ¥0.005。</li>
+            <li><strong>L2 深度辩论团</strong>：
+              <ul>
+                <li><strong>技术壁垒 Agent (DeepSeek-R1)</strong>：穿透现有技术，判定新颖性与创造性；</li>
+                <li><strong>法律风控 Agent (Qwen-72B)</strong>：比对权利要求保护范围，出具 FTO 清洁度；</li>
+                <li><strong>商业化可行性 Agent</strong>：执行 DCF 量化测算与 WACC 敏感性分析；</li>
+                <li><strong>产投协调中枢 (Consensus Engine)</strong>：汇总分歧，出具转化建议备忘录。</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#991b1b; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">🛡️ 安全合规</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">工业级防幻觉证据链与 E2B 安全沙箱</h3>
+          <pre style="margin:4px 0 0; font-size:11.5px; background:var(--bg-card-subtle); padding:10px; border-radius:6px; border:1px solid var(--border-hairline);">
+1. 零凭证独立沙箱 (Zero-Credential Sandbox)：每次任务在 E2B 容器中启动，沙箱内部无敏感密钥。
+2. 外部鉴权网关：所有模型与外部 CNIPA 数据库调用经外部网关动态签发，杜绝 Prompt 注入盗密。
+3. 证据链回跳 (Traceability)：所有论断必须附带 [Ref: 专利独立权利要求X]，支持一键高亮原文。</pre>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#0284c7; background:rgba(2,132,199,0.08); border:1px solid rgba(2,132,199,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">💰 商业模型</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">算力成本测算与 Unit Economics</h3>
+          <p style="font-size:12.5px; color:var(--text-secondary); line-height:1.6; margin:0;">单次尽调消耗约 8,500 Tokens，混合调度 DeepSeek-R1 与轻量模型，<strong>单次总成本控制在 ¥0.038</strong>。企业订阅定价采用阶梯式席位制（¥4,999/年 包含 1,000 次深度尽调），毛利率可达 90% 以上。</p>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#4b5563; background:rgba(107,114,128,0.08); border:1px solid rgba(107,114,128,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">⚔️ 竞争优势</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 6px;">行业竞品定位与护城河矩阵</h3>
+          <table class="tracking-table" style="margin:8px 0 0;">
+            <thead>
+              <tr><th>对比维度</th><th>智慧芽 PatSnap</th><th>杭转中心智者模型</th><th>TechTransfer.AI (智策)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>核心形态</td><td>传统检索大数据工具</td><td>高校政务大模型</td><td><strong>对冲基金级多 Agent 投研终端</strong></td></tr>
+              <tr><td>估值透明度</td><td>无定量财务模型</td><td>定性描述</td><td><strong>白盒 DCF 财务模型与公式公开</strong></td></tr>
+              <tr><td>人机复盘闭环</td><td>无</td><td>无</td><td><strong>人机对抗比分 (VS) 与 TRL 命中率回测</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:#b45309; background:var(--arti-gold-faint); border:1px solid var(--arti-gold-border); padding:2px 8px; border-radius:4px; margin-bottom:6px;">📦 交付物标准</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 8px;">标准化交付物体系 (Deliverables Matrix)</h3>
+          <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-top:6px;">
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight:700; font-size:12.5px; color:var(--color-navy); margin-bottom:3px;">1. 需求结构树 (Functional Breakdown Tree)</div>
+              <div style="font-size:11.8px; color:var(--text-secondary); line-height:1.5;">
+                分层解耦「标的接入层（十五五12大战略大类/IPC主分类号检索/私有交底书解析）→ 智能尽调层（壁垒/FTO/TRL/DCF白盒多Agent协同）→ 决策复盘层（人机对抗VS比分、命中率回测、研报导出）」，全链路闭环。
+              </div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight:700; font-size:12.5px; color:var(--color-navy); margin-bottom:3px;">2. Unit Economics 单次算力成本口径 (Token & API Model)</div>
+              <div style="font-size:11.8px; color:var(--text-secondary); line-height:1.5;">
+                单次深度尽调严格控制在 8,500 Tokens，混合调度 DeepSeek-R1 (推理思考链) 与轻量 Embedding 模型，单次算力成本 <strong>¥0.038</strong>；企业年席位费 ¥4,999 包含 1,000 次尽调，边际算力成本占比低于 0.8%，毛利率维持在 92% 以上。
+              </div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight:700; font-size:12.5px; color:var(--color-navy); margin-bottom:3px;">3. 差异化护城河矩阵 (Differentiated Moat Matrix)</div>
+              <div style="font-size:11.8px; color:var(--text-secondary); line-height:1.5;">
+                打破传统智慧芽式的纯检索与通用政务大模型的定性大白话，独创「对冲基金级投研终端架构 + DCF白盒数学财务模型 + 人机双轨对抗复盘闭环」，构筑不可替代的专业壁垒。
+              </div>
+            </div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+              <div style="font-weight:700; font-size:12.5px; color:var(--color-navy); margin-bottom:3px;">4. 高保真可运行工作台交付物 (Production-Ready Artifact)</div>
+              <div style="font-size:11.8px; color:var(--text-secondary); line-height:1.5;">
+                原生无构建极简前端（秒级静态开箱、零构建依赖）+ 云端 Zion BaaS 生产级 GraphQL 接口与 PostgreSQL 真实数据持久化（项目ID: xAXj4omz8Kn），已预置国家十五五十二大战略金标资产。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="display:inline-block; font-size:11px; font-weight:700; color:var(--color-navy); background:rgba(29,78,216,0.08); border:1px solid rgba(29,78,216,0.2); padding:2px 8px; border-radius:4px; margin-bottom:6px;">🔍 投研复盘</div>
+          <h3 style="font-size:15px; font-weight:700; margin:0 0 8px;">产品架构自查与投研飞轮 (AI PM Reflection)</h3>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q1: 为什么这个场景非 Multi-Agent 不可，而非单模型 RAG？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              成果转化涉及“法务侵权审查、工程物理机理、财务折现测算、产业投委会博弈”四个迥异的认知域。单个 Prompt 让大模型自问自答极易出现“自洽但虚假”的和稀泥结论；唯有通过角色对抗辩论（红蓝对抗），才能撕开专利壁垒破绽。
+            </div>
+          </div>
+
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q2: 面对科研人员与投资人对“AI 幻觉”的零容忍，证据链如何防伪？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              所有 Agent 输出严格绑定两层回跳：一是必须附带独立权利要求溯源锚点（如 <code>[Ref: 权项 1]</code>、<code>[Ref: 实施例 4]</code>），二是 FTO 侵权检索必须输出具体公开号及对比比对表，不可提供任何无出处的推测。
+            </div>
+          </div>
+
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q3: 系统的单次调用 Unit Economics 能否跑通商业化？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              跑得通且利润丰厚。单次尽调经过端侧结构化切片与摘要，大模型上下文仅需 8,500 Tokens，成本 ¥0.038。即便对于赠送 100 算力点（折合 10 次尽调）的新用户，平台获客成本仅 ¥0.38，而付费转化客单价 ¥4,999/年。
+            </div>
+          </div>
+
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q4: 如何平衡“国家十五五公共标的”与“企业/经理人私有交底书”的数据隔离？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              采用租户隔离与数据标签分离机制：十五五12大标的属于 Public Benchmark（只读金标库，所有人可浏览复盘）；用户通过提交表单新增的交底书及私有尽调记录严格绑定其 <code>user_id</code>，新注册用户自管库默认纯净为空。
+            </div>
+          </div>
+
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q5: 人机协同复盘 (Human-in-the-loop) 为何需要设定 VS 比分机制（如 13:12）？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              科技成果转化不是 AI 取代人类，而是 AI 作为超级副驾驶。比分系统量化了资深技术经纪人对 AI 估值与 TRL 判定的修正次数。当人类纠偏样本被持续沉淀，即可形成平台独有的垂直领域微调飞轮。
+            </div>
+          </div>
+
+          <div style="border-left:3px solid var(--color-navy); padding-left:10px;">
+            <div style="font-weight:700; font-size:12.5px;">Q6: 为什么估值选择“收益现值法 (DCF) + 实物期权”白盒，坚决摒弃黑盒数字？</div>
+            <div style="font-size:11.8px; color:var(--text-secondary); margin-top:2px;">
+              产业基金投委会绝不采信“大模型直接给出估值 3000 万”的黑盒断言。必须把自由现金流预测、专利技术贡献率、WACC 加权折现率以及风险补偿因子公开，只有每个财务公式与变量完全透明，研报才具备法律和投资过会效力。
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==========================================================================
+         5. 通用多租户注册/登录与身份切换模态框 (Universal Auth Modal)
+         ========================================================================== -->
+    <div id="auth-modal-backdrop" class="auth-modal-backdrop">
+      <div class="auth-modal-card">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:6px;">切换使用身份 / 会员登录</h3>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:20px;">选择您的行业角色进入工作台，或注册专属机构账号。</p>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+          <button id="btn-login-manager" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-card-subtle); border:1.5px solid var(--color-navy); border-radius:var(--radius-lg); cursor:pointer; text-align:left;">
+            <div class="user-avatar" style="width:34px; height:34px;">技</div>
+            <div>
+              <div style="font-size:13.5px; font-weight:700;">执业技术经理人 / 科技经纪人</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">国家技术转移示范中心认证 · 包含 100 点深度尽调算力</div>
+            </div>
+          </button>
+
+          <button id="btn-login-investor" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-card-subtle); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); cursor:pointer; text-align:left;">
+            <div class="user-avatar" style="width:34px; height:34px; background:#0d9488;">投</div>
+            <div>
+              <div style="font-size:13.5px; font-weight:700;">硬科技产业投资机构 (PE/VC)</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">投资决策委员会 · 具备 DCF 估值测算与 FTO 审查权限</div>
+            </div>
+          </button>
+
+          <button id="btn-login-guest" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-card-subtle); border:1px solid var(--border-hairline); border-radius:var(--radius-lg); cursor:pointer; text-align:left;">
+            <div class="user-avatar" style="width:34px; height:34px; background:#6b7280;">客</div>
+            <div>
+              <div style="font-size:13.5px; font-weight:600;">访客体验模式 (Guest Mode)</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">开放免登体验 · 可查看五大战略硬科技标的辩论</div>
+            </div>
+          </button>
+
+          <button id="btn-custom-register" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:var(--bg-card); border:1px dashed var(--border-hairline); border-radius:var(--radius-md); font-size:12.5px; font-weight:600; color:var(--color-navy); cursor:pointer;">
+            <span>➕ 注册自定义新机构/专家账号</span>
+          </button>
+        </div>
+
+        <button id="btn-close-auth-modal" style="width:100%; padding:9px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:12.5px; font-weight:600; cursor:pointer;">
+          取消并返回
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         5.2 录入/导入成果标的模态框 (Create Patent Modal - Direct Sync to Zion BaaS)
+         ========================================================================== -->
+    <div id="create-patent-modal-backdrop" class="auth-modal-backdrop">
+      <div class="auth-modal-card" style="max-width:540px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <h3 style="font-size:18px; font-weight:700;">录入/导入科技成果标的</h3>
+          <span style="font-size:11px; padding:3px 8px; background:var(--signal-green-bg); color:var(--signal-green); border-radius:var(--radius-sm); font-weight:600;">直连 Zion 云端</span>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:18px;">支持输入任意实验室成果或真实专利号，提交后将写入 Zion 云端 PostgreSQL 数据库，并自动触发 5 大 Agent 现场并发辩论。</p>
+
+        <form id="form-create-patent" style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">专利/成果名称 *</label>
+            <input type="text" id="input-new-patent-title" required placeholder="例如：基于微波超导量子电路的单光子相干雷达探测架构" style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; background:var(--bg-card); color:var(--text-primary); box-sizing:border-box;">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">专利公开号 / 申请号 *</label>
+              <input type="text" id="input-new-patent-no" required placeholder="CN202510988214.2" style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; background:var(--bg-card); color:var(--text-primary); box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">所属硬科技赛道</label>
+              <select id="input-new-patent-domain" style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; background:var(--bg-card); color:var(--text-primary); box-sizing:border-box;">
+                <option value="量子计算与精密测量">量子计算与精密测量</option>
+                <option value="微电子与算力芯片">微电子与算力芯片</option>
+                <option value="生物医药与靶向治疗">生物医药与靶向治疗</option>
+                <option value="新能源与先进储能">新能源与先进储能</option>
+                <option value="具身智能与人形机器人">具身智能与人形机器人</option>
+                <option value="绿色氢能与脱碳材料">绿色氢能与脱碳材料</option>
+                <option value="商业航天与空天信息">商业航天与空天信息</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">权利人机构 / 国家实验室</label>
+              <input type="text" id="input-new-patent-applicant" placeholder="量子科学国家实验室" style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; background:var(--bg-card); color:var(--text-primary); box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">参考估值意向 (万元)</label>
+              <input type="number" id="input-new-patent-val" placeholder="7200" style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; background:var(--bg-card); color:var(--text-primary); box-sizing:border-box;">
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">技术说明书摘要与核心权利要求</label>
+            <textarea id="input-new-patent-summary" rows="3" placeholder="简述该成果解决的行业痛点与技术创新点..." style="width:100%; padding:9px 12px; border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:12.5px; background:var(--bg-card); color:var(--text-primary); resize:vertical; box-sizing:border-box; font-family:inherit;"></textarea>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button type="submit" id="btn-submit-new-patent" style="flex:1; padding:10px; background:var(--color-navy); color:#ffffff; border:none; border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">
+              🚀 提交并同步至 Zion 云端
+            </button>
+            <button type="button" id="btn-close-create-patent" style="padding:10px 16px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         5.3 蒙特卡洛 10,000 次风险敏感性仿真模型模态框 (Simulation Modal)
+         ========================================================================== -->
+    <div id="simulation-modal-backdrop" class="auth-modal-backdrop">
+      <div class="auth-modal-card" style="max-width:620px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid var(--border-hairline); padding-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:20px;">📈</span>
+            <div>
+              <h3 id="sim-modal-title" style="font-size:16px; font-weight:700; margin:0;">3D 光电共封 (CPO) 互连架构芯片</h3>
+              <div id="sim-modal-meta" style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">新兴支柱 · 集成电路 (H01L) · 当前 TRL-6 · 蒙特卡洛 10,000 次抽样模拟</div>
+            </div>
+          </div>
+          <button id="btn-close-sim-modal" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--text-muted); padding:4px 8px;">✕</button>
+        </div>
+
+        <!-- 仿真 SVG 正态与累积分布双曲线 -->
+        <div style="background:var(--bg-canvas); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:16px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--color-navy);">中试突破周期概率密度分布 (PDF) 与累计达成率 (CDF)</span>
+            <span style="font-size:11px; color:var(--signal-green); font-weight:600;">置信区间 90% (P10 - P90)</span>
+          </div>
+
+          <svg viewBox="0 0 540 160" style="width:100%; height:auto; overflow:visible;">
+            <defs>
+              <linearGradient id="bellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#1d4ed8" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+
+            <!-- 网格线 -->
+            <line x1="40" y1="20" x2="520" y2="20" stroke="var(--border-hairline)" stroke-dasharray="3,3" />
+            <line x1="40" y1="70" x2="520" y2="70" stroke="var(--border-hairline)" stroke-dasharray="3,3" />
+            <line x1="40" y1="120" x2="520" y2="120" stroke="var(--border-hairline)" />
+
+            <!-- 正态钟形曲线与渐变区域 -->
+            <path d="M 40 120 C 140 120, 200 30, 270 30 C 340 30, 400 120, 520 120 Z" fill="url(#bellGrad)" />
+            <path d="M 40 120 C 140 120, 200 30, 270 30 C 340 30, 400 120, 520 120" fill="none" stroke="#1d4ed8" stroke-width="2.5" />
+
+            <!-- 累计达成 S 曲线 -->
+            <path d="M 40 120 C 160 120, 240 70, 320 35 C 380 20, 460 20, 520 20" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" />
+
+            <!-- P10 悲观, P50 基准, P90 乐观竖线 -->
+            <line x1="190" y1="25" x2="190" y2="120" stroke="#b45309" stroke-width="1.5" stroke-dasharray="2,2" />
+            <text x="175" y="135" font-size="10" fill="var(--text-muted)">P10: 8.5m</text>
+
+            <line x1="270" y1="20" x2="270" y2="120" stroke="#1d4ed8" stroke-width="2" />
+            <circle cx="270" cy="30" r="4" fill="#1d4ed8" />
+            <text x="250" y="145" font-size="11" font-weight="700" fill="var(--color-navy)">P50: 12.4m</text>
+
+            <line x1="370" y1="25" x2="370" y2="120" stroke="#059669" stroke-width="1.5" stroke-dasharray="2,2" />
+            <text x="355" y="135" font-size="10" fill="var(--text-muted)">P90: 16.8m</text>
+          </svg>
+        </div>
+
+        <!-- 4 大参数卡片 -->
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:14px;">
+          <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:10px 12px;">
+            <div style="font-size:11px; color:var(--text-muted);">预期达产周期 (基准值)</div>
+            <div id="sim-modal-cycle" style="font-size:16px; font-weight:700; color:var(--color-navy); margin-top:2px;">12 个月 (跨越至 TRL-8)</div>
+          </div>
+
+          <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:10px 12px;">
+            <div style="font-size:11px; color:var(--text-muted);">中试成功率 (达标率)</div>
+            <div id="sim-modal-rate" style="font-size:16px; font-weight:700; color:var(--signal-green); margin-top:2px;">88.5% (高保真通过)</div>
+          </div>
+
+          <div style="background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:10px 12px; grid-column: span 2;">
+            <div style="font-size:11px; color:var(--text-muted);">关键工程失效点 (FMEA 灵敏度因子)</div>
+            <div id="sim-modal-fmea" style="font-size:12.5px; font-weight:600; color:#b45309; margin-top:2px;">高密度硅光 TSV 垂直过孔热应力形变 (贡献 54.2% 仿真方差)</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button onclick="alert('已导出该标的 10,000 次蒙特卡洛抽样原始模拟数据包 (CSV/JSON)！')" style="padding:8px 14px; font-size:12px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:var(--radius-md); cursor:pointer;">
+            📥 导出仿真数据集
+          </button>
+          <button id="btn-close-sim-modal-2" style="padding:8px 16px; font-size:12px; font-weight:600; background:var(--color-navy); color:#fff; border:none; border-radius:var(--radius-md); cursor:pointer;">
+            完成
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         6. 右下角常驻反馈悬浮球与轻量 Toast (Floating Feedback & Toast)
+         ========================================================================== -->
+    <button id="floating-feedback-btn" class="floating-feedback-btn" title="意见反馈与合作通道">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+    <div id="copy-toast" class="copy-toast">✓ 复制成功！</div>
+
+  </div>
+
+  <!-- 脚本引入 -->
+  <script src="js/zion-client.js"></script>
+  <script src="js/mock-data.js"></script>
+  <script src="js/agent-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

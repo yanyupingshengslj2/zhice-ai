@@ -1,0 +1,6 @@
+/* Root styles for Vite + React App */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
