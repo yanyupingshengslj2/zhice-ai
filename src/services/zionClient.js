@@ -1,7 +1,8 @@
 /**
- * Zion BaaS (Functorz) GraphQL Client
+ * Zion BaaS (Functorz) Official GraphQL Client
  * Project: TechTransfer.AI (智策)
  * Project ExID: xAXj4omz8Kn
+ * Endpoint: https://zion-app.functorz.com/zero/xAXj4omz8Kn/api/graphql-v2
  */
 
 const ZION_ENDPOINT = "https://zion-app.functorz.com/zero/xAXj4omz8Kn/api/graphql-v2";
@@ -22,138 +23,168 @@ export class ZionService {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    try {
-      const res = await fetch(ZION_ENDPOINT, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ query, variables })
-      });
-      const data = await res.json();
-      if (data.errors) {
-        console.error("[Zion GraphQL Errors]:", data.errors);
-        throw new Error(data.errors[0]?.message || "GraphQL 执行异常");
-      }
-      return data.data;
-    } catch (err) {
-      console.warn("[Zion BaaS Network Fallback]:", err.message);
-      throw err;
-    }
+    const res = await fetch(ZION_ENDPOINT, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query, variables })
+    });
+    const data = await res.json();
+    return data;
   }
 
   /**
-   * 真实用户登录校验
-   */
-  static async login(email, password) {
-    // 1. 查询本地与云端已注册用户
-    const registeredUsers = JSON.parse(localStorage.getItem("zhice_registered_users") || "[]");
-    const matched = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!matched) {
-      throw new Error("【账号未注册】该机构邮箱尚未在智策平台注册，请切换至「注册」！");
-    }
-
-    if (matched.password !== password) {
-      throw new Error("【密码错误】您输入的密码不正确，请重新核验！");
-    }
-
-    // 登录成功，签发会话信息
-    const session = {
-      id: matched.id,
-      name: matched.name,
-      org: matched.org,
-      email: matched.email,
-      role: matched.role,
-      credits: matched.credits || 100,
-      avatarLetter: matched.name ? matched.name[0] : "专",
-      token: "zion_jwt_" + Date.now()
-    };
-
-    localStorage.setItem("zhice-current-user", JSON.stringify(session));
-    return session;
-  }
-
-  /**
-   * 真实用户注册
-   */
-  static async register({ email, code, password, name, org, role }) {
-    // 1. 核验验证码
-    const expectedCode = sessionStorage.getItem("zhice_expected_code");
-    const expectedEmail = sessionStorage.getItem("zhice_expected_account");
-
-    if (!expectedCode || !code || code !== expectedCode || expectedEmail !== email) {
-      throw new Error("【验证码无效】输入的验证码错误或已失效，请重新获取！");
-    }
-
-    // 2. 检查密码强度
-    if (!password || password.length < 8) {
-      throw new Error("【密码不符合安全要求】密码长度至少需要 8 位！");
-    }
-
-    // 3. 检查是否已被注册
-    const registeredUsers = JSON.parse(localStorage.getItem("zhice_registered_users") || "[]");
-    if (registeredUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error("【该邮箱已被注册】请直接在「登录」页输入密码进入！");
-    }
-
-    // 4. 落库创建新用户 (向 Zion 用户模型和持久化注册池写入)
-    const newUser = {
-      id: "usr_" + Math.random().toString(36).substring(2, 9),
-      email,
-      password, // 生产环境通常为单向哈希
-      name,
-      org,
-      role,
-      credits: 100,
-      created_at: new Date().toISOString()
-    };
-
-    registeredUsers.push(newUser);
-    localStorage.setItem("zhice_registered_users", JSON.stringify(registeredUsers));
-
-    // 自动登录新用户
-    const session = {
-      id: newUser.id,
-      name: newUser.name,
-      org: newUser.org,
-      email: newUser.email,
-      role: newUser.role,
-      credits: 100,
-      avatarLetter: newUser.name[0],
-      token: "zion_jwt_" + Date.now()
-    };
-    localStorage.setItem("zhice-current-user", JSON.stringify(session));
-
-    // 消耗验证码
-    sessionStorage.removeItem("zhice_expected_code");
-
-    return session;
-  }
-
-  /**
-   * 发送真实 6 位验证码
+   * 1. Zion 官方云端真实发送邮箱验证码 (mutation: sendVerificationCodeToEmail)
    */
   static async sendVerificationCode(email) {
     if (!email || !email.includes("@")) {
-      throw new Error("请输入合法的企业或机构邮箱！");
+      throw new Error("【格式错误】请输入合法的企业或机构邮箱！");
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem("zhice_expected_code", code);
-    sessionStorage.setItem("zhice_expected_account", email);
+    const query = `
+      mutation SendCode($email: String!, $type: verificationEnumType!) {
+        sendVerificationCodeToEmail(email: $email, verificationEnumType: $type)
+      }
+    `;
 
-    console.log(`[Zion Mail Service] 发信中继 -> 目标: ${email}, 验证码: ${code}`);
+    const result = await this.request(query, {
+      email: email.trim(),
+      type: "SIGN_UP"
+    });
 
-    // 若有部署 Serverless 或后端 API，发起真实现代投递
-    try {
-      await fetch("/api/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code })
-      });
-    } catch (e) {
-      // 本地预览容错
+    if (result.errors && result.errors.length > 0) {
+      const err = result.errors[0];
+      console.error("[Zion sendVerificationCode Error]:", err);
+      throw new Error(err.message || "Zion 云端验证码发送失败，请稍后重试");
     }
 
-    return { success: true, email, devCode: code };
+    console.log(`[Zion BaaS 生产网关] 真实已向 ${email} 触发云端发信流水线:`, result.data);
+    return { success: true, email };
+  }
+
+  /**
+   * 2. Zion 官方云端真实用户注册 (mutation: authenticateWithEmail)
+   */
+  static async register({ email, code, password, name, org, role }) {
+    if (!email) throw new Error("请输入企业机构邮箱！");
+    if (!code) throw new Error("请输入邮件中的 6 位验证码！");
+    if (!password || password.length < 8) throw new Error("密码长度至少需 8 位！");
+
+    const query = `
+      mutation RegisterUser($email: String!, $password: String!, $verificationCode: String, $register: Boolean!) {
+        authenticateWithEmail(
+          email: $email
+          password: $password
+          verificationCode: $verificationCode
+          register: $register
+        ) {
+          account {
+            id
+            email
+            permissionRoles
+          }
+          jwt {
+            token
+          }
+        }
+      }
+    `;
+
+    const result = await this.request(query, {
+      email: email.trim(),
+      password,
+      verificationCode: code.trim(),
+      register: true
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      const err = result.errors[0];
+      console.error("[Zion Registration Error]:", err);
+      if (err.message && err.message.includes("bad verification code")) {
+        throw new Error("【验证码错误】您输入的验证码不正确或已过期，请核对邮箱最新邮件！");
+      }
+      throw new Error(`【Zion 注册被拒绝】: ${err.message}`);
+    }
+
+    const authData = result.data?.authenticateWithEmail;
+    if (!authData || !authData.jwt?.token) {
+      throw new Error("【注册异常】未能获取合法的 Zion 会话令牌！");
+    }
+
+    // 组装用户档案
+    const session = {
+      id: authData.account?.id || "zion_" + Date.now(),
+      email: authData.account?.email || email,
+      name: name || email.split("@")[0],
+      org: org || "国家技术转移示范中心",
+      role: role || "技术经理人 · 执业会员",
+      credits: 100,
+      avatarLetter: (name ? name[0] : "专").toUpperCase(),
+      token: authData.jwt.token
+    };
+
+    localStorage.setItem("zhice-current-user", JSON.stringify(session));
+    return session;
+  }
+
+  /**
+   * 3. Zion 官方云端真实用户登录 (mutation: authenticateWithEmail)
+   */
+  static async login(email, password) {
+    if (!email || !password) {
+      throw new Error("请输入邮箱和密码！");
+    }
+
+    const query = `
+      mutation LoginUser($email: String!, $password: String!, $register: Boolean!) {
+        authenticateWithEmail(
+          email: $email
+          password: $password
+          register: $register
+        ) {
+          account {
+            id
+            email
+            permissionRoles
+          }
+          jwt {
+            token
+          }
+        }
+      }
+    `;
+
+    const result = await this.request(query, {
+      email: email.trim(),
+      password,
+      register: false
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      const err = result.errors[0];
+      console.warn("[Zion Login Error]:", err);
+      if (err.message && err.message.includes("Incorrect email or password")) {
+        throw new Error("【账号或密码错误】该邮箱尚未注册或密码不符，请核对或切换至「注册」！");
+      }
+      throw new Error(`【登录失败】: ${err.message}`);
+    }
+
+    const authData = result.data?.authenticateWithEmail;
+    if (!authData || !authData.jwt?.token) {
+      throw new Error("【鉴权异常】未能获取合法的 Zion 登录令牌！");
+    }
+
+    const session = {
+      id: authData.account?.id,
+      email: authData.account?.email || email,
+      name: email.split("@")[0],
+      org: "国家技术转移示范中心",
+      role: "技术经理人 · 执业会员",
+      credits: 100,
+      avatarLetter: (email.split("@")[0] || "专")[0].toUpperCase(),
+      token: authData.jwt.token
+    };
+
+    localStorage.setItem("zhice-current-user", JSON.stringify(session));
+    return session;
   }
 }
