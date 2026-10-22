@@ -38,7 +38,7 @@ export default function AuthModal({ onLoginSuccess }) {
     return () => clearInterval(timer);
   }, [codeCountdown]);
 
-  // 处理获取验证码
+  // 处理获取验证码 (完全走 Zion 官方接口，严禁任何前端编造数据)
   const handleGetCode = async () => {
     if (!regEmail || !regEmail.includes('@')) {
       setRegError('【请输入合规邮箱】请先填写您的企业或机构邮箱！');
@@ -46,15 +46,10 @@ export default function AuthModal({ onLoginSuccess }) {
     }
     setRegError('');
     try {
-      const res = await ZionService.sendVerificationCode(regEmail);
+      await ZionService.sendVerificationCode(regEmail);
       setCodeCountdown(60);
-      setCodeNotice({
-        email: regEmail,
-        code: res.code,
-        cloudTriggered: res.cloudTriggered
-      });
-      // 自动将收到的验证码预填或提供一键填入
-      setRegCode(res.code);
+      setCodeNotice(`✉️ Zion 官方云端已受理发信请求，正在派发至 ${regEmail}。请查收邮件并将真实 6 位验证码填入上方。`);
+      setRegCode(''); // 严禁任何伪造或自动填充！
     } catch (err) {
       setRegError(err.message);
     }
@@ -518,22 +513,19 @@ export default function AuthModal({ onLoginSuccess }) {
                     </button>
                   </div>
 
-                  {/* 智能双轨凭证提示卡：既发起 Zion 云端发信，又保障开发即刻通行 */}
+                  {/* 真实云端发信状态提示条 (无任何伪造数据) */}
                   {codeNotice && (
                     <div style={{
-                      fontSize: '11px',
+                      fontSize: '11.5px',
                       color: '#1e40af',
                       background: '#eff6ff',
-                      padding: '6px 10px',
+                      padding: '8px 12px',
                       borderRadius: '6px',
                       marginTop: '6px',
                       border: '1px solid #bfdbfe',
-                      lineHeight: 1.45
+                      lineHeight: 1.5
                     }}>
-                      <div>✉️ Zion 官方云端已向 <strong>{codeNotice.email}</strong> 触发发信。</div>
-                      <div style={{ color: '#047857', marginTop: '2px' }}>
-                        🔑 <strong>安全通行验证码：</strong> <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '13px', background: '#dcfce7', padding: '1px 5px', borderRadius: '4px' }}>{codeNotice.code}</span> (已为您自动填入输入框)
-                      </div>
+                      {codeNotice}
                     </div>
                   )}
                 </div>

@@ -34,6 +34,7 @@ export class ZionService {
 
   /**
    * 1. Zion 官方云端真实发送邮箱验证码 (mutation: sendVerificationCodeToEmail)
+   * 严禁任何本地 Math.random 伪造！完全由 Zion 云端服务生成与下发
    */
   static async sendVerificationCode(email) {
     if (!email || !email.includes("@")) {
@@ -41,39 +42,37 @@ export class ZionService {
     }
 
     const trimmedEmail = email.trim();
-    // 生成 6 位确定性会话验证码，双轨保障 (云端 + 会话容灾)
-    const localFallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem("zhice_expected_code", localFallbackCode);
-    sessionStorage.setItem("zhice_expected_account", trimmedEmail);
-
-    let zionCloudOk = false;
-    try {
-      const query = `
-        mutation SendCode($email: String!, $type: verificationEnumType!) {
-          sendVerificationCodeToEmail(email: $email, verificationEnumType: $type)
-        }
-      `;
-      const result = await this.request(query, {
-        email: trimmedEmail,
-        type: "SIGN_UP"
-      });
-      if (result.data?.sendVerificationCodeToEmail) {
-        zionCloudOk = true;
+    const query = `
+      mutation SendCode($email: String!, $type: verificationEnumType!) {
+        sendVerificationCodeToEmail(email: $email, verificationEnumType: $type)
       }
-    } catch (e) {
-      console.warn("[Zion Cloud Mail Gateway Warning]:", e.message);
+    `;
+
+    const result = await this.request(query, {
+      email: trimmedEmail,
+      type: "SIGN_UP"
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      const err = result.errors[0];
+      console.error("[Zion sendVerificationCode Error]:", err);
+      throw new Error(err.message || "Zion 云端邮件网关响应异常");
     }
 
+    if (!result.data?.sendVerificationCodeToEmail) {
+      throw new Error("Zion 云端发信流水线返回拒绝，请检查邮箱地址或稍后再试");
+    }
+
+    console.log(`[Zion 真实云端发信] 官方接口已受理 -> 目标邮箱: ${trimmedEmail}`);
     return {
       success: true,
-      email: trimmedEmail,
-      code: localFallbackCode,
-      cloudTriggered: zionCloudOk
+      email: trimmedEmail
     };
   }
 
   /**
    * 2. Zion 官方云端真实用户注册 (mutation: authenticateWithEmail)
+   * 严禁伪造放行！必须由 Zion 云端校验验证码与密码强度
    */
   static async register({ email, code, password, name, org, role }) {
     if (!email) throw new Error("请输入企业机构邮箱！");
@@ -83,61 +82,53 @@ export class ZionService {
     const trimmedEmail = email.trim();
     const trimmedCode = code.trim();
 
-    // 优先尝试 Zion 云端官方鉴权
-    let cloudAuthSuccess = false;
-    let authData = null;
-
-    try {
-      const query = `
-        mutation RegisterUser($email: String!, $password: String!, $verificationCode: String, $register: Boolean!) {
-          authenticateWithEmail(
-            email: $email
-            password: $password
-            verificationCode: $verificationCode
-            register: $register
-          ) {
-            account {
-              id
-              email
-              permissionRoles
-            }
-            jwt {
-              token
-            }
+    const query = `
+      mutation RegisterUser($email: String!, $password: String!, $verificationCode: String, $register: Boolean!) {
+        authenticateWithEmail(
+          email: $email
+          password: $password
+          verificationCode: $verificationCode
+          register: $register
+        ) {
+          account {
+            id
+            email
+            permissionRoles
+          }
+          jwt {
+            token
           }
         }
-      `;
-
-      const result = await this.request(query, {
-        email: trimmedEmail,
-        password,
-        verificationCode: trimmedCode,
-        register: true
-      });
-
-      if (result.data?.authenticateWithEmail?.jwt?.token) {
-        cloudAuthSuccess = true;
-        authData = result.data.authenticateWithEmail;
       }
-    } catch (err) {
-      console.warn("[Zion Direct Auth Failed, checking fallback verification]:", err.message);
+    `;
+
+    const result = await this.request(query, {
+      email: trimmedEmail,
+      password,
+      verificationCode: trimmedCode,
+      register: true
+    });
+
+    if (result.errors && result.errors.length > 0) {
+      const err = result.errors[0];
+      console.error("[Zion Registration Error]:", err);
+      if (err.message && err.message.includes("bad verification code")) {
+        throw new Error("【验证码错误】Zion 云端核验失败：您输入的验证码不正确或已过期！");
+      }
+      throw new Error(`【Zion 注册拒绝】: ${err.message}`);
     }
 
-    // 若云端由于第三方邮件网关未配置报错，核验本地会话中继验证码
-    if (!cloudAuthSuccess) {
-      const expectedCode = sessionStorage.getItem("zhice_expected_code");
-      const expectedEmail = sessionStorage.getItem("zhice_expected_account");
-      if (!expectedCode || trimmedCode !== expectedCode || expectedEmail !== trimmedEmail) {
-        throw new Error("【验证码不匹配】输入的验证码与派发记录不符，请核对或重新获取！");
-      }
+    const authData = result.data?.authenticateWithEmail;
+    if (!authData || !authData.jwt?.token) {
+      throw new Error("【注册异常】未能获取合法的 Zion 会话令牌！");
     }
 
-    // 无论哪条路径，均严格写入已注册用户池
+    // 登记用户档案
     const registeredUsers = JSON.parse(localStorage.getItem("zhice_registered_users") || "[]");
     const existingIndex = registeredUsers.findIndex(u => u.email.toLowerCase() === trimmedEmail.toLowerCase());
     
     const userRecord = {
-      id: authData?.account?.id || "usr_" + Math.random().toString(36).substring(2, 9),
+      id: authData.account?.id || ("usr_" + Date.now()),
       email: trimmedEmail,
       password,
       name: name.trim(),
@@ -154,7 +145,6 @@ export class ZionService {
     }
     localStorage.setItem("zhice_registered_users", JSON.stringify(registeredUsers));
 
-    // 组装用户登录会话
     const session = {
       id: userRecord.id,
       email: trimmedEmail,
@@ -163,11 +153,10 @@ export class ZionService {
       role: userRecord.role,
       credits: 100,
       avatarLetter: (userRecord.name ? userRecord.name[0] : "专").toUpperCase(),
-      token: authData?.jwt?.token || ("jwt_zion_" + Date.now())
+      token: authData.jwt.token
     };
 
     localStorage.setItem("zhice-current-user", JSON.stringify(session));
-    sessionStorage.removeItem("zhice_expected_code");
     return session;
   }
 
