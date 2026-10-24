@@ -197,4 +197,63 @@ export class ZionService {
     localStorage.setItem("zhice-current-user", JSON.stringify(session));
     return session;
   }
+
+  /**
+   * 4. 触发云端 AI 智能体多态推理 (Gemini 2.5 flash / 智策推理中枢)
+   * 严格按设计图传入 4 大入参: patent_title, claims_payload, ipc_classification, strategic_pillar
+   */
+  static async invokeAIReasoning({ patent, userPrompt, token = null }) {
+    const inputArgs = {
+      patent_title: patent?.title || "硬科技成果标的",
+      claims_payload: `标的摘要与权利要求特征: ${patent?.summary || ""}\n技术经理人核验指令: ${userPrompt}`,
+      ipc_classification: patent?.ipcClass || "H01L / C07K",
+      strategic_pillar: patent?.pillarType || "十五五国家战略新兴产业"
+    };
+
+    const createMutation = `
+      mutation StartZaiConversation($inputArgs: Map_String_ObjectScalar!, $zaiConfigId: String!) {
+        fz_zai_create_conversation(inputArgs: $inputArgs, zaiConfigId: $zaiConfigId)
+      }
+    `;
+
+    try {
+      const res = await this.request(createMutation, {
+        zaiConfigId: "mvj2fqpz",
+        inputArgs
+      }, token);
+
+      if (res.data?.fz_zai_create_conversation) {
+        const conversationId = res.data.fz_zai_create_conversation;
+        console.log("[AI Agent] 成功创建云端推理会话:", conversationId);
+
+        // 轮询会话结果 (至多 5 次)
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 1200));
+          const queryRes = await this.request(`
+            query GetZaiResult($conversationId: Long!) {
+              fz_zai_conversation_result(conversationId: $conversationId) {
+                conversationId
+                status
+                data
+                reasoningContent
+              }
+            }
+          `, { conversationId }, token);
+
+          const resultObj = queryRes.data?.fz_zai_conversation_result;
+          if (resultObj && (resultObj.status === "COMPLETED" || resultObj.data)) {
+            const outputText = typeof resultObj.data === "string" ? resultObj.data : JSON.stringify(resultObj.data, null, 2);
+            return {
+              success: true,
+              text: outputText || resultObj.reasoningContent
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[AI Agent 云端会话轮询超时或等待部署，启用智策领域智能推理引擎]:", err);
+    }
+
+    return null;
+  }
 }

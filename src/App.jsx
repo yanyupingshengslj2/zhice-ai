@@ -11,6 +11,13 @@ export default function App() {
       const raw = localStorage.getItem("zhice-current-user");
       if (raw) {
         const parsed = JSON.parse(raw);
+        // 彻底脱敏：如本地残留历史个人测试信息，即刻重置为标准机构称谓
+        if (parsed.name && (parsed.name.includes("石路加") || parsed.org?.includes("浙大"))) {
+          parsed.name = "技术经理人 (执业会员)";
+          parsed.org = "国家级技术转移示范工作站";
+          parsed.avatarLetter = "技";
+          localStorage.setItem("zhice-current-user", JSON.stringify(parsed));
+        }
         setCurrentUser(parsed);
       }
     } catch (e) {
