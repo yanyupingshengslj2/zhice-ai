@@ -1,0 +1,871 @@
+/**
+ * TechTransfer.AI (智策) - Component Styles
+ * 1:1 复刻 Artifin 核心微交互：四联输入卡、复盘人机比分板、研报货架与 PRD 抽屉
+ */
+
+/* ==========================================================================
+   1. 首页工作台组件 (Hero & Input Workspace)
+   ========================================================================== */
+.hero-header {
+  text-align: center;
+  margin: 32px 0 20px;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.hero-title .brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+/* 新手任务卡片 (Task Banner) */
+.task-banner {
+  background-color: var(--arti-gold-faint);
+  border: 1px solid var(--arti-gold-border);
+  border-radius: var(--radius-lg);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.task-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.task-banner-reward {
+  font-size: 11.5px;
+  color: #b45309;
+  font-weight: 700;
+}
+
+.btn-task-action {
+  padding: 4px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-task-action:hover {
+  background: var(--text-primary);
+  color: #ffffff;
+}
+
+/* 核心输入卡片 (Main Input Card) */
+.main-input-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+  padding: 18px 20px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.main-input-card:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 16px 36px -4px rgba(23, 21, 18, 0.1);
+}
+
+.input-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--text-primary);
+  resize: none;
+  min-height: 54px;
+  line-height: 1.6;
+}
+
+.input-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* 输入框下方四联模式工具栏 */
+.input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.mode-pills-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card-subtle);
+  padding: 3px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-hairline);
+}
+
+.mode-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mode-pill:hover {
+  color: var(--text-primary);
+}
+
+.mode-pill.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.input-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-select-target {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.btn-select-target:hover {
+  background: var(--bg-card-subtle);
+  color: var(--text-primary);
+}
+
+.btn-engine-auto {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-hairline);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.btn-submit-task {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--text-primary);
+  color: var(--bg-card);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn-submit-task:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* 推荐提示词药丸瀑布流 */
+.prompts-section {
+  margin-top: 24px;
+}
+
+.prompts-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.prompts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prompt-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  transition: all 0.15s ease;
+}
+.prompt-pill:hover {
+  border-color: var(--color-navy);
+  color: var(--color-navy);
+  transform: translateY(-1px);
+}
+
+/* 底部工业生态卡片 */
+.ecosystem-footer-card {
+  margin-top: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ecosystem-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ecosystem-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ecosystem-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   2. 研报库视图 (View: Reports - 1:1 对标截屏 1)
+   ========================================================================== */
+.reports-hero {
+  text-align: center;
+  max-width: 620px;
+  margin: 40px auto 30px;
+}
+
+.reports-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--arti-gold-faint);
+  border: 1px solid var(--arti-gold-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 22px;
+  color: #b45309;
+}
+
+.reports-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.reports-sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.reports-feature-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 580px;
+  margin: 0 auto 28px;
+}
+
+.report-feature-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+}
+
+.feature-icon-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.feature-texts h4 {
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.feature-texts p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.btn-go-generate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--text-primary);
+  color: #ffffff;
+  border-radius: var(--radius-full);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   3. 判断复盘视图 (View: Tracking - 1:1 对标截屏 2)
+   ========================================================================== */
+.tracking-header-bar {
+  margin-bottom: 20px;
+}
+
+.tracking-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tracking-title-row h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tracking-sub {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.scoreboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.score-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.score-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.score-avatar-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.score-accuracy-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.score-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.metric-item-num {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.metric-item-lbl {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* 分歧对比卡片 */
+.divergence-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.vs-battle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 10px 0 14px;
+}
+
+.vs-score-giant {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+/* 跟踪数据表 */
+.tracking-table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.tracking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.tracking-table th {
+  background: var(--bg-card-subtle);
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.tracking-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* ==========================================================================
+   4. 实时推演对话流 (View: Live Agent Stream - 1:1 对标截屏 3)
+   ========================================================================== */
+.live-stream-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 40px;
+}
+
+.asset-ticker-floating {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.user-query-bubble {
+  align-self: flex-end;
+  max-width: 70%;
+  background: #ebe4d8;
+  border-radius: 18px 18px 4px 18px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.55;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.agent-live-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.status-spinner-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gold-star-icon {
+  color: #d97706;
+  font-size: 15px;
+  animation: pulse-star 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-star {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+.timer-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   5. 60% 宽度 PRD 全景白皮书抽屉 (Slide-Over PRD Drawer)
+   ========================================================================== */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.prd-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 62%;
+  max-width: 900px;
+  height: 100vh;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-hairline);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
+  z-index: 101;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.prd-drawer-panel.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.btn-close-drawer {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.drawer-content-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px 60px;
+  line-height: 1.7;
+}
+
+.drawer-content-body h1, 
+.drawer-content-body h2, 
+.drawer-content-body h3 {
+  margin: 20px 0 10px;
+  color: var(--text-primary);
+}
+
+.drawer-content-body p, 
+.drawer-content-body li {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin-bottom: 10px;
+}
+
+.drawer-content-body pre {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin: 12px 0;
+}
+
+/* ==========================================================================
+   6. 用户账户中心 Popover 与 登录/身份认证模态框 (Artifin Auth & Profile)
+   ========================================================================== */
+.user-popover-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 10px;
+  width: 270px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-elevated);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  z-index: 100;
+  display: none;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.user-popover-menu.show {
+  display: block;
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.popover-body {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.popover-footer {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-popover-action {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+.btn-popover-action:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-primary);
+}
+
+/* 登录/认证模态框 */
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.auth-modal-backdrop.show {
+  display: flex;
+}
+
+.auth-modal-card {
+  width: 90%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+  padding: 28px;
+  position: relative;
+}
+
+/* ==========================================================================
+   7. 推演时吸底操作栏与同心圆急停按键 (Pinned Bottom Bar & Stop Button)
+   ========================================================================== */
+.pinned-bottom-container {
+  position: fixed;
+  bottom: 0;
+  left: 250px;
+  right: 0;
+  background: linear-gradient(to top, var(--bg-canvas) 85%, transparent);
+  padding: 16px 32px 24px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pinned-input-card {
+  width: 100%;
+  max-width: 860px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pinned-input-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.btn-stop-stream {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: #171512;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px #171512;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.btn-stop-stream:hover {
+  transform: scale(1.08);
+}
+.btn-stop-stream .stop-square {
+  width: 11px;
+  height: 11px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   8. 右下角常驻反馈悬浮球 (Floating Feedback Button)
+   ========================================================================== */
+.floating-feedback-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-secondary);
+  z-index: 50;
+  transition: all 0.2s ease;
+}
+.floating-feedback-btn:hover {
+  border-color: var(--color-navy);
+  color: var(--color-navy);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* 轻量复制提示 Toast */
+.copy-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: #171512;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.copy-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

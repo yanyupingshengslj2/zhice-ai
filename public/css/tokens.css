@@ -1,0 +1,88 @@
+/**
+ * TechTransfer.AI (智策) - Design Tokens
+ * 像素级对齐 Artifin 官方设计系统 + 科技金融工业级调色板
+ */
+
+:root {
+  /* 1. 画布与底色体系 (Warm Oatmeal & Paper Texture) */
+  --bg-sidebar: #ebe7df;                  /* 官方侧边栏温暖亚麻燕麦色 */
+  --bg-sidebar-hover: #e2ded5;            /* 侧边栏悬停微暗色 */
+  --bg-sidebar-active: #dfdad0;           /* 当前选中菜单高亮色 */
+  --bg-sidebar-border: rgba(23, 21, 18, 0.08);
+
+  --bg-canvas: #f6f4f1;                   /* 官方象牙暖白主画布 */
+  --bg-canvas-subtle: #fbf9f6;            /* 微亮区域 */
+  --bg-grid-line: rgba(23, 21, 18, 0.04); /* 坐标纸网格纹理线 */
+
+  --bg-card: #ffffff;                     /* 纯白微浮雕卡片 */
+  --bg-card-subtle: #faf8f5;              /* 卡片内次级区块 */
+  --bg-card-hover: #fcfbfa;
+
+  --border-hairline: rgba(23, 21, 18, 0.09); /* 官方极细发丝边框 */
+  --border-focus: rgba(23, 21, 18, 0.28);
+  --shadow-card: 0 4px 20px -2px rgba(23, 21, 18, 0.05), 0 2px 6px -1px rgba(23, 21, 18, 0.03);
+  --shadow-elevated: 0 12px 32px -4px rgba(23, 21, 18, 0.08), 0 4px 12px -2px rgba(23, 21, 18, 0.04);
+
+  /* 2. 标志性金标色彩 (Artifin Gold Signature) */
+  --arti-gold: #ffecb5;
+  --arti-gold-faint: rgba(255, 236, 181, 0.35);
+  --arti-gold-gradient: linear-gradient(270deg, #ffecb5, #fff6dc);
+  --arti-gold-text: #111010;
+  --arti-gold-border: rgba(217, 119, 6, 0.25);
+
+  /* 3. 文字与排版墨水系统 (Ink Hierarchy) */
+  --text-primary: #171512;                /* 官方高密度墨黑 */
+  --text-secondary: rgba(23, 21, 18, 0.72);
+  --text-muted: rgba(23, 21, 18, 0.48);
+  --text-faint: rgba(23, 21, 18, 0.32);
+
+  /* 4. 工业级数据状态信号色 (Industrial Signals) */
+  --signal-green: #10b981;                /* 高成熟度 / 高新颖性 / 看多 */
+  --signal-green-bg: rgba(16, 185, 129, 0.1);
+  --signal-red: #ff4245;                  /* 侵权风险 / 驳回概率 / 看空 */
+  --signal-red-bg: rgba(255, 66, 69, 0.1);
+  --signal-amber: #f59e0b;                /* 需人工复核 / 警示 */
+  --signal-amber-bg: rgba(245, 158, 11, 0.1);
+  --signal-blue: #3b82f6;                 /* 链路传输 / 数据网关 */
+  --signal-blue-bg: rgba(59, 130, 246, 0.1);
+
+  /* 5. 科技金融工业级品牌辅色 */
+  --color-navy: #1d4ed8;                  /* 产投科技深海蓝 */
+  --color-jade: #0d9488;                  /* 新质生产力翡翠绿 */
+
+  /* 6. 控件尺寸与圆角规范 (Controls & Radii) */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+/* 夜间模式映射 (Dark Theme Support) */
+[data-theme="dark"] {
+  --bg-sidebar: #141416;
+  --bg-sidebar-hover: #1c1c1f;
+  --bg-sidebar-active: #232328;
+  --bg-sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --bg-canvas: #0b0b0d;
+  --bg-canvas-subtle: #121215;
+  --bg-grid-line: rgba(255, 255, 255, 0.03);
+
+  --bg-card: #18181c;
+  --bg-card-subtle: #1f1f24;
+  --bg-card-hover: #222227;
+
+  --border-hairline: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(255, 255, 255, 0.3);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 12px 32px -4px rgba(0, 0, 0, 0.7);
+
+  --text-primary: #f5f5f7;
+  --text-secondary: rgba(245, 245, 247, 0.72);
+  --text-muted: rgba(245, 245, 247, 0.48);
+  --text-faint: rgba(245, 245, 247, 0.28);
+}
