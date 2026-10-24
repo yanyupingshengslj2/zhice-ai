@@ -122,6 +122,7 @@ export default function AuthModal({ onLoginSuccess }) {
 
   return (
     <div style={{
+      width: '100%',
       minHeight: '100vh',
       backgroundColor: 'var(--bg-canvas)',
       backgroundImage: 'linear-gradient(to right, var(--bg-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--bg-grid-line) 1px, transparent 1px)',
@@ -134,6 +135,7 @@ export default function AuthModal({ onLoginSuccess }) {
     }}>
       {/* 顶部精简导航 */}
       <header style={{
+        width: '100%',
         height: '52px',
         padding: '0 28px',
         display: 'flex',
@@ -144,7 +146,8 @@ export default function AuthModal({ onLoginSuccess }) {
         backdropFilter: 'blur(12px)',
         position: 'sticky',
         top: 0,
-        zIndex: 10
+        zIndex: 10,
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
@@ -181,6 +184,7 @@ export default function AuthModal({ onLoginSuccess }) {
       {/* 主卡片居中可滚动容器 */}
       <main style={{
         flex: 1,
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -190,12 +194,13 @@ export default function AuthModal({ onLoginSuccess }) {
         <div style={{
           width: '100%',
           maxWidth: '920px',
+          margin: '0 auto',
           background: 'var(--bg-card)',
           border: '1px solid var(--border-hairline)',
           borderRadius: '16px',
           boxShadow: 'var(--shadow-elevated)',
           display: 'grid',
-          gridTemplateColumns: '420px 1fr',
+          gridTemplateColumns: 'minmax(320px, 420px) minmax(360px, 1fr)',
           overflow: 'hidden'
         }}>
           {/* 左侧：品牌展示与权益 (紧凑自适应排版，坚决杜绝内容被截断) */}
@@ -565,7 +570,7 @@ export default function AuthModal({ onLoginSuccess }) {
                       required
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      placeholder="如：石路加"
+                      placeholder="如：张投资总监 / 李研究员"
                       style={{
                         width: '100%',
                         padding: '8px 10px',
@@ -586,7 +591,7 @@ export default function AuthModal({ onLoginSuccess }) {
                       required
                       value={regOrg}
                       onChange={(e) => setRegOrg(e.target.value)}
-                      placeholder="如：浙大国际科创中心"
+                      placeholder="如：国家技术转移示范中心 / 某产业创投基金"
                       style={{
                         width: '100%',
                         padding: '8px 10px',
