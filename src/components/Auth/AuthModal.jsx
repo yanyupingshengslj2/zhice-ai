@@ -3,6 +3,36 @@ import { ZionService } from '../../services/zionClient';
 
 export default function AuthModal({ onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login'); // 'login' | 'register'
+
+  // 移动端响应式与滑动状态
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [mobilePanel, setMobilePanel] = useState('auth'); // 'auth' (登录表单) | 'intro' (品牌权益)
+  const [touchStartX, setTouchStartX] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches[0]) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null || !e.changedTouches || !e.changedTouches[0]) return;
+    const diffX = e.changedTouches[0].clientX - touchStartX;
+    if (diffX > 50) {
+      // 向右滑动 -> 切换到品牌特色
+      setMobilePanel('intro');
+    } else if (diffX < -50) {
+      // 向左滑动 -> 切换到登录/注册表单
+      setMobilePanel('auth');
+    }
+    setTouchStartX(null);
+  };
   
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');
@@ -137,7 +167,7 @@ export default function AuthModal({ onLoginSuccess }) {
       <header style={{
         width: '100%',
         height: '52px',
-        padding: '0 28px',
+        padding: isMobile ? '0 14px' : '0 28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -149,10 +179,10 @@ export default function AuthModal({ onLoginSuccess }) {
         zIndex: 10,
         boxSizing: 'border-box'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
-            width: '26px',
-            height: '26px',
+            width: '24px',
+            height: '24px',
             borderRadius: 'var(--radius-sm)',
             background: 'var(--color-navy)',
             color: '#fff',
@@ -160,23 +190,24 @@ export default function AuthModal({ onLoginSuccess }) {
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 800,
-            fontSize: '14px'
+            fontSize: '13px'
           }}>⚡</div>
-          <div style={{ fontSize: '14.5px', fontWeight: 800 }}>
+          <div style={{ fontSize: isMobile ? '13.5px' : '14.5px', fontWeight: 800 }}>
             TechTransfer.AI <span style={{ fontWeight: 400, opacity: 0.6 }}>(智策)</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>🔒 企业级统一鉴权网关</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {!isMobile && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>🔒 机构级统一鉴权网关</span>}
           <div style={{
-            fontSize: '11.5px',
-            color: 'var(--text-muted)',
+            fontSize: '11px',
+            color: 'var(--signal-green)',
+            fontWeight: 700,
             padding: '2px 8px',
-            border: '1px solid var(--border-hairline)',
+            border: '1px solid #bbf7d0',
             borderRadius: 'var(--radius-sm)',
-            background: 'var(--bg-card)'
+            background: '#f0fdf4'
           }}>
-            🟢 Zion BaaS 生产节点就绪
+            🟢 国家战略专网 · 实时在线
           </div>
         </div>
       </header>
@@ -186,121 +217,211 @@ export default function AuthModal({ onLoginSuccess }) {
         flex: 1,
         width: '100%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '30px 16px',
+        padding: isMobile ? '16px 12px 28px' : '30px 16px',
         boxSizing: 'border-box'
       }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '920px',
-          margin: '0 auto',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-hairline)',
-          borderRadius: '16px',
-          boxShadow: 'var(--shadow-elevated)',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(320px, 420px) minmax(360px, 1fr)',
-          overflow: 'hidden'
-        }}>
-          {/* 左侧：品牌展示与权益 (紧凑自适应排版，坚决杜绝内容被截断) */}
-          <section style={{
-            background: 'var(--bg-sidebar)',
-            padding: '28px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            borderRight: '1px solid var(--border-hairline)',
-            boxSizing: 'border-box'
-          }}>
-            <div>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                background: 'var(--arti-gold-gradient)',
-                border: '1px solid var(--arti-gold-border)',
-                borderRadius: 'var(--radius-full)',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                color: 'var(--arti-gold-text)',
-                marginBottom: '14px'
-              }}>
-                ✨ 注册即送 100 Credits 深度尽调算力
-              </div>
-              <h2 style={{
-                fontSize: '20px',
-                fontWeight: 800,
-                lineHeight: 1.35,
-                letterSpacing: '-0.02em',
-                margin: '0 0 10px',
-                color: 'var(--text-primary)'
-              }}>
-                机构级科技成果转化<br />让技术判断开始复利
-              </h2>
-              <p style={{
-                fontSize: '12.5px',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.55,
-                margin: '0 0 16px'
-              }}>
-                打破传统大模型模糊泛泛的黑盒评估。依托国家“十五五”战略性支柱与未来产业图谱，以白盒 DCF 估值与人机对抗复盘赋能科技投研。
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🤖</div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: 700 }}>4 大 Agent 并行拆解</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>技术壁垒、法律 FTO 与 DCF 白盒估值</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🎯</div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: 700 }}>十五五国家战略产业图谱</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>集成电路、双抗ADC、量子计算与具身智能</div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📊</div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: 700 }}>白盒财务量化估值</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>DCF 自由现金流与蒙特卡洛敏感性概率</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 底部好评证言 (保证完全可见) */}
+        {/* 移动端专享：滑动切换选项卡与手势提示 */}
+        {isMobile && (
+          <div style={{ width: '100%', maxWidth: '420px', marginBottom: '14px' }}>
             <div style={{
-              background: 'rgba(255, 255, 255, 0.75)',
-              border: '1px solid var(--border-hairline)',
-              borderRadius: '10px',
-              padding: '10px 12px',
-              fontSize: '11.5px',
-              marginTop: '16px'
+              display: 'flex',
+              background: '#e2e8f0',
+              borderRadius: '30px',
+              padding: '3px',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)'
             }}>
-              <div style={{ color: '#d97706', fontSize: '11px', marginBottom: '2px' }}>★★★★★</div>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>“判断不再散落在会议纪要里，而是沉淀为核心资产。”</div>
-              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '3px' }}>国家级技术转移示范工作站 · 资深专家</div>
+              <button
+                type="button"
+                onClick={() => setMobilePanel('auth')}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  borderRadius: '25px',
+                  border: 'none',
+                  background: mobilePanel === 'auth' ? 'var(--color-navy)' : 'transparent',
+                  color: mobilePanel === 'auth' ? '#ffffff' : '#64748b',
+                  fontSize: '13px',
+                  fontWeight: mobilePanel === 'auth' ? 700 : 500,
+                  cursor: 'pointer',
+                  boxShadow: mobilePanel === 'auth' ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+              >
+                🔐 账号登录 / 注册
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobilePanel('intro')}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  borderRadius: '25px',
+                  border: 'none',
+                  background: mobilePanel === 'intro' ? 'var(--color-navy)' : 'transparent',
+                  color: mobilePanel === 'intro' ? '#ffffff' : '#64748b',
+                  fontSize: '13px',
+                  fontWeight: mobilePanel === 'intro' ? 700 : 500,
+                  cursor: 'pointer',
+                  boxShadow: mobilePanel === 'intro' ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}
+              >
+                ✨ 平台权益与特色
+              </button>
             </div>
-          </section>
+            <div style={{ textAlign: 'center', fontSize: '10.5px', color: '#94a3b8', marginTop: '6px' }}>
+              👈 支持触摸屏幕左右滑动自由切换 👉
+            </div>
+          </div>
+        )}
 
-          {/* 右侧：表单交互区 (自带可滚动保护，注册按钮 100% 显式呈现) */}
-          <section style={{
-            padding: '28px 28px',
-            display: 'flex',
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            width: '100%',
+            maxWidth: isMobile ? '100%' : '920px',
+            margin: '0 auto',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-hairline)',
+            borderRadius: '16px',
+            boxShadow: 'var(--shadow-elevated)',
+            display: isMobile ? 'flex' : 'grid',
             flexDirection: 'column',
-            justifyContent: 'center',
-            maxHeight: '85vh',
-            overflowY: 'auto',
-            boxSizing: 'border-box'
-          }}>
-            {/* Tab 切换 */}
+            gridTemplateColumns: isMobile ? '1fr' : 'minmax(320px, 420px) minmax(360px, 1fr)',
+            overflow: 'hidden'
+          }}
+        >
+          {/* 左侧：品牌展示与权益 (移动端支持单栏沉浸呈现与一键跳转) */}
+          {(!isMobile || mobilePanel === 'intro') && (
+            <section style={{
+              background: 'var(--bg-sidebar)',
+              padding: isMobile ? '24px 20px' : '28px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              borderRight: isMobile ? 'none' : '1px solid var(--border-hairline)',
+              borderBottom: isMobile ? '1px solid var(--border-hairline)' : 'none',
+              boxSizing: 'border-box',
+              width: '100%'
+            }}>
+              <div>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '4px 10px',
+                  background: 'var(--arti-gold-gradient)',
+                  border: '1px solid var(--arti-gold-border)',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  color: 'var(--arti-gold-text)',
+                  marginBottom: '14px'
+                }}>
+                  ✨ 注册即送 100 Credits 深度尽调算力
+                </div>
+                <h2 style={{
+                  fontSize: isMobile ? '18px' : '20px',
+                  fontWeight: 800,
+                  lineHeight: 1.35,
+                  letterSpacing: '-0.02em',
+                  margin: '0 0 10px',
+                  color: 'var(--text-primary)'
+                }}>
+                  机构级科技成果转化<br />让技术判断开始复利
+                </h2>
+                <p style={{
+                  fontSize: '12px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.55,
+                  margin: '0 0 16px'
+                }}>
+                  打破传统大模型模糊泛泛的黑盒评估。依托国家“十五五”战略性支柱与未来产业图谱，以白盒 DCF 估值与人机对抗复盘赋能科技投研。
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🤖</div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 700 }}>4 大 Agent 并行拆解</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>技术壁垒、法律 FTO 与 DCF 白盒估值</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🎯</div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 700 }}>十五五国家战略产业图谱</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>集成电路、双抗ADC、量子计算与具身智能</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.7)', border: '1px solid var(--border-hairline)', borderRadius: '10px', padding: '8px 12px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>📊</div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 700 }}>白盒财务量化估值</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>DCF 自由现金流与蒙特卡洛敏感性概率</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 移动端前往登录操作按钮 */}
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setMobilePanel('auth')}
+                  style={{
+                    marginTop: '20px',
+                    width: '100%',
+                    padding: '11px',
+                    background: 'var(--color-navy)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.2)'
+                  }}
+                >
+                  前往账号登录 / 注册 →
+                </button>
+              )}
+
+              {/* 底部好评证言 */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.75)',
+                border: '1px solid var(--border-hairline)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                fontSize: '11.5px',
+                marginTop: '16px'
+              }}>
+                <div style={{ color: '#d97706', fontSize: '11px', marginBottom: '2px' }}>★★★★★</div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>“判断不再散落在会议纪要里，而是沉淀为核心资产。”</div>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '3px' }}>国家级技术转移示范工作站 · 资深专家</div>
+              </div>
+            </section>
+          )}
+
+          {/* 右侧：表单交互区 (移动端全屏无遮挡，100% 居中展示) */}
+          {(!isMobile || mobilePanel === 'auth') && (
+            <section style={{
+              padding: isMobile ? '24px 20px' : '28px 28px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              maxHeight: isMobile ? 'none' : '85vh',
+              overflowY: 'auto',
+              boxSizing: 'border-box',
+              width: '100%'
+            }}>
+              {/* Tab 切换 */}
             <div style={{
               display: 'flex',
               borderBottom: '2px solid var(--border-hairline)',
@@ -674,6 +795,7 @@ export default function AuthModal({ onLoginSuccess }) {
               登录即代表您同意 <a href="#" style={{ color: 'var(--color-navy)' }}>服务条款</a> 与 <a href="#" style={{ color: 'var(--color-navy)' }}>隐私保护政策</a>
             </div>
           </section>
+          )}
         </div>
       </main>
     </div>

@@ -364,6 +364,16 @@ export default function Workbench({ user, onLogout }) {
   const [patentsList, setPatentsList] = useState(BENCHMARK_PATENTS);
   const [selectedPatent, setSelectedPatent] = useState(BENCHMARK_PATENTS[0]);
 
+  // 移动端自适应与三栏切换状态
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [mobileDeliberationTab, setMobileDeliberationTab] = useState('report'); // 'patents' | 'report' | 'chat'
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 新增模态弹窗状态
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -706,6 +716,23 @@ export default function Workbench({ user, onLogout }) {
   return (
     <div className="app-container" style={{ width: '100vw', height: '100vh', display: 'flex', overflow: 'hidden' }}>
       
+      {/* 移动端侧边栏遮罩 */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 40
+          }}
+        />
+      )}
+
       {/* ==========================================================================
           1. 左侧导航边栏 (Sidebar: Warm Oatmeal)
           ========================================================================== */}
@@ -713,11 +740,16 @@ export default function Workbench({ user, onLogout }) {
         width: '240px',
         background: 'var(--bg-sidebar)',
         borderRight: '1px solid var(--border-hairline)',
-        display: 'flex',
+        display: isMobile ? (mobileSidebarOpen ? 'flex' : 'none') : 'flex',
         flexDirection: 'column',
         flexShrink: 0,
         userSelect: 'none',
-        zIndex: 20
+        zIndex: 50,
+        position: isMobile ? 'fixed' : 'relative',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        boxShadow: isMobile && mobileSidebarOpen ? '4px 0 18px rgba(0,0,0,0.2)' : 'none'
       }}>
         {/* 头部品牌 */}
         <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-hairline)' }}>
@@ -1032,7 +1064,7 @@ export default function Workbench({ user, onLogout }) {
         {/* 顶部现代化操作条 */}
         <header style={{
           height: '52px',
-          padding: '0 20px',
+          padding: isMobile ? '0 12px' : '0 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1041,17 +1073,36 @@ export default function Workbench({ user, onLogout }) {
           backdropFilter: 'blur(12px)',
           zIndex: 10
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                style={{
+                  border: '1px solid var(--border-hairline)',
+                  background: '#ffffff',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  color: 'var(--color-navy)'
+                }}
+              >
+                ☰
+              </button>
+            )}
             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }}></span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              国家“十五五”重大科技成果智能研判网络 · 实时在线
+            <span style={{ fontSize: isMobile ? '11px' : '12px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {isMobile ? '智策十五五成果研判网络' : '国家“十五五”重大科技成果智能研判网络 · 实时在线'}
             </span>
-            <span style={{ fontSize: '11px', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
-              多智能体协同推理集群
-            </span>
+            {!isMobile && (
+              <span style={{ fontSize: '11px', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
+                多智能体协同推理集群
+              </span>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px' }}>
             <div style={{
               padding: '3px 10px',
               background: 'var(--arti-gold-gradient)',
@@ -1509,10 +1560,82 @@ export default function Workbench({ user, onLogout }) {
               VIEW 1 (Deliberation): 三栏深度尽调工作台
               ------------------------------------------------------------------ */}
           {activeTab === 'nav-agent' && workspaceMode === 'deliberation' && (
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr 350px', overflow: 'hidden', height: '100%', minHeight: 0 }}>
-              
+            <div style={{
+              flex: 1,
+              display: isMobile ? 'flex' : 'grid',
+              flexDirection: 'column',
+              gridTemplateColumns: isMobile ? '1fr' : '280px 1fr 350px',
+              overflow: 'hidden',
+              height: '100%',
+              minHeight: 0
+            }}>
+              {/* 移动端专享：三栏切换顶栏 */}
+              {isMobile && (
+                <div style={{
+                  display: 'flex',
+                  background: '#ffffff',
+                  borderBottom: '1px solid var(--border-hairline)',
+                  padding: '6px 10px',
+                  gap: '6px',
+                  flexShrink: 0
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setMobileDeliberationTab('patents')}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: mobileDeliberationTab === 'patents' ? 'var(--color-navy)' : '#f1f5f9',
+                      color: mobileDeliberationTab === 'patents' ? '#ffffff' : '#64748b',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📑 标的库 ({patentsList.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileDeliberationTab('report')}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: mobileDeliberationTab === 'report' ? 'var(--color-navy)' : '#f1f5f9',
+                      color: mobileDeliberationTab === 'report' ? '#ffffff' : '#64748b',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📊 评审研报
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileDeliberationTab('chat')}
+                    style={{
+                      flex: 1,
+                      padding: '7px 0',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: mobileDeliberationTab === 'chat' ? 'var(--color-navy)' : '#f1f5f9',
+                      color: mobileDeliberationTab === 'chat' ? '#ffffff' : '#64748b',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    💬 AI 协同
+                  </button>
+                </div>
+              )}
+
               {/* 左栏：十五五战略产业图谱标的列表 */}
-              <aside style={{ borderRight: '1px solid var(--border-hairline)', background: 'var(--bg-sidebar)', padding: '14px', overflowY: 'auto' }}>
+              {(!isMobile || mobileDeliberationTab === 'patents') && (
+              <aside style={{ borderRight: isMobile ? 'none' : '1px solid var(--border-hairline)', background: 'var(--bg-sidebar)', padding: '14px', overflowY: 'auto', flex: 1, width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b' }}>重大成果标的库</span>
                   <button
@@ -1590,7 +1713,10 @@ export default function Workbench({ user, onLogout }) {
                   {filteredPatents.map(p => (
                     <div
                       key={p.id}
-                      onClick={() => setSelectedPatent(p)}
+                      onClick={() => {
+                        setSelectedPatent(p);
+                        if (isMobile) setMobileDeliberationTab('report');
+                      }}
                       style={{
                         padding: '11px',
                         borderRadius: '8px',
@@ -1615,9 +1741,11 @@ export default function Workbench({ user, onLogout }) {
                   ))}
                 </div>
               </aside>
+              )}
 
               {/* 中栏：专利深度交底、白盒 DCF 估值公式与 4 大 Agent 并行对抗辩论 */}
-              <main style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {(!isMobile || mobileDeliberationTab === 'report') && (
+              <main style={{ padding: isMobile ? '16px 14px' : '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px', flex: 1, width: '100%' }}>
                 
                 {/* 标的概览卡片 */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border-hairline)', padding: '18px', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
@@ -1810,16 +1938,20 @@ export default function Workbench({ user, onLogout }) {
                   </div>
                 </div>
               </main>
+              )}
 
               {/* 右栏：AI Agent 实时研判交互 */}
+              {(!isMobile || mobileDeliberationTab === 'chat') && (
               <aside style={{
-                borderLeft: '1px solid var(--border-hairline)',
+                borderLeft: isMobile ? 'none' : '1px solid var(--border-hairline)',
                 background: '#ffffff',
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
                 minHeight: 0,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flex: 1,
+                width: '100%'
               }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-hairline)', background: '#f8fafc', flexShrink: 0 }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
@@ -2008,6 +2140,7 @@ export default function Workbench({ user, onLogout }) {
                   </button>
                 </form>
               </aside>
+              )}
             </div>
           )}
 
