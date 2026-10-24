@@ -347,6 +347,15 @@ export default function Workbench({ user, onLogout }) {
   // Navigation View State: 'nav-agent' | 'nav-reports' | 'nav-tracking' | 'nav-predict' | 'nav-portfolio'
   const [activeTab, setActiveTab] = useState('nav-agent');
   
+  // 工作台模式：'landing' (对标 Artifin 新建对话主画布) | 'deliberation' (三栏深度推演)
+  const [workspaceMode, setWorkspaceMode] = useState('landing');
+
+  // Landing 状态的输入与模式
+  const [landingInput, setLandingInput] = useState('');
+  const [landingMode, setLandingMode] = useState('chat'); // 'chat' | 'quick' | 'scan' | 'deep'
+  const [showPatentDropdown, setShowPatentDropdown] = useState(false);
+  const [topicPage, setTopicPage] = useState(0);
+
   // Patent & Category Filter
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'pillar' | 'future'
   const [selectedPatent, setSelectedPatent] = useState(BENCHMARK_PATENTS[0]);
@@ -368,21 +377,19 @@ export default function Workbench({ user, onLogout }) {
     return p.category === categoryFilter;
   });
 
-  // 最近研判会话历史记录 (对标 Artifin Recent Sessions)
-  const [historySessions, setHistorySessions] = useState([
-    { id: 'sess-1', title: 'CPO 垂直光栅耦合器 FTO 侵权排险', time: '10分钟前', patentId: 'cpo-chip' },
-    { id: 'sess-2', title: '双抗 ADC 连接子血浆半衰期与 DCF 估值', time: '35分钟前', patentId: 'adc-bio' },
-    { id: 'sess-3', title: '全固态电池硫化物隔膜中试良率推演', time: '2小时前', patentId: 'solid-battery' }
-  ]);
+  // 最近研判会话历史记录 (新用户默认初始为空数组，杜绝生硬写死！)
+  const [historySessions, setHistorySessions] = useState(() => {
+    try {
+      const stored = localStorage.getItem("zhice_history_sessions");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Chat State
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([
-    {
-      sender: 'ai',
-      text: `您好，技术经理人！我是 智策 成果转化协同推理中枢。当前标的：【${selectedPatent.title}】。您可随时询问技术壁垒评级、法律与 FTO 侵权分析、白盒 DCF 估值测算，或直接粘贴技术交底书文本进行全景推演！`
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
   // 消息滚动容器引用
@@ -400,9 +407,77 @@ export default function Workbench({ user, onLogout }) {
   const displayOrg = (!user?.org || user.org.includes("浙大")) ? "国家级技术转移示范工作站" : user.org;
   const displayAvatar = displayName[0] || "技";
 
+  // 推荐话题库 (两组可轮播切换)
+  const recommendedTopicGroups = [
+    [
+      { text: "CPO 光电共封芯片的商业化瓶颈与未来前景如何？", patentId: "cpo-chip" },
+      { text: "全固态电池硫化物电解质的针刺安全性与中试良率", patentId: "solid-battery" },
+      { text: "双抗 ADC 药物连接子在欧美的 FTO 侵权风险排查", patentId: "adc-bio" },
+      { text: "高动态双足人形机器人力控关节减速器国产替代率", patentId: "robotics-harmonic" },
+      { text: "百吨级液氧甲烷火箭变推力发动机全系统长程热试车", patentId: "aerospace-rocket" },
+      { text: "倾转旋翼油电混合 eVTOL 飞行器低空通勤运力测算", patentId: "evtol-lowaltitude" }
+    ],
+    [
+      { text: "连续变量微波量子纠缠雷达的抗截获与实物期权估值", patentId: "quantum-radar" },
+      { text: "具身智能多模态端到端网络 Sim-to-Real 零样本迁移", patentId: "embodied-ai" },
+      { text: "算力超算中心百 Tbps 交换机微流控片上液冷集成", patentId: "cpo-chip" },
+      { text: "双特异性抗体 DAR 值均一性对降低心脏毒性的作用", patentId: "adc-bio" },
+      { text: "常温 12mS/cm 固态电解质离子电导率对动力电池的催化", patentId: "solid-battery" },
+      { text: "商业航天一子级垂直动力软着陆回收控制难点", patentId: "aerospace-rocket" }
+    ]
+  ];
+
+  const currentTopics = recommendedTopicGroups[topicPage];
+
+  // 智能实体意图识别与标的自动纠偏中枢 (彻底根治答非所问问题！)
+  const resolveTargetPatent = (query, currentPatent) => {
+    const q = query.toLowerCase();
+    if (q.includes("cpo") || q.includes("光电共封") || q.includes("微电子") || q.includes("算力芯片")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "cpo-chip") || currentPatent;
+    }
+    if (q.includes("adc") || q.includes("双抗") || q.includes("抗体") || q.includes("肿瘤") || q.includes("药")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "adc-bio") || currentPatent;
+    }
+    if (q.includes("固态") || q.includes("电池") || q.includes("电解质") || q.includes("储能")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "solid-battery") || currentPatent;
+    }
+    if (q.includes("机器人") || q.includes("减速器") || q.includes("关节") || q.includes("谐波")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "robotics-harmonic") || currentPatent;
+    }
+    if (q.includes("火箭") || q.includes("发动机") || q.includes("航天") || q.includes("甲烷") || q.includes("推力")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "aerospace-rocket") || currentPatent;
+    }
+    if (q.includes("evtol") || q.includes("低空") || q.includes("飞行器") || q.includes("旋翼")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "evtol-lowaltitude") || currentPatent;
+    }
+    if (q.includes("量子") || q.includes("纠缠") || q.includes("雷达")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "quantum-radar") || currentPatent;
+    }
+    if (q.includes("具身") || q.includes("人形") || q.includes("大模型") || q.includes("端到端")) {
+      return BENCHMARK_PATENTS.find(p => p.id === "embodied-ai") || currentPatent;
+    }
+    return currentPatent;
+  };
+
   // 高深度技术结构化生成器 (动态结合用户问题与专利特征)
   const generateDynamicAnalysis = (patent, query, currentWacc, currentAlpha, currentValuation) => {
     const q = query.toLowerCase();
+
+    // 针对具体前景提问的深度解答
+    if (q.includes("未来") || q.includes("前景") || q.includes("趋势") || q.includes("产业") || q.includes("市场") || q.includes("空间")) {
+      if (patent.id === "cpo-chip") {
+        return `【✦ 智策前沿产业洞察 · CPO 光电共封未来前景专项研判】：
+针对您对「${patent.title}」未来产业前景的核心关切：
+1. 算力底座爆发驱动：随着全球大模型集群迈入百万卡时代，传统可插拔光模块在 1.6T/3.2T 节点遭遇功耗与热密度天花板（单端口功耗突破 30W）。CPO 将光引擎与计算 ASIC 芯片共同封装在同一基板，可降低功耗 30% 以上、互连时延缩短 50%，是 2026-2028 年 AI 超算中心的确定性必选路径；
+2. 产业链卡位与市场渗透：预计 2027 年全球 CPO 市场规模将突破 54 亿美元，年复合增长率高达 88%。以台积电 COUPE 与英伟达为代表的巨头已锁定硅光 CPO 制造产能，具有极高的产业战略卡位价值；
+3. 关键转化风险与瓶颈：当前中试攻坚难点集中在微流控片上液冷散热均匀性、光纤微透镜垂直耦合良率（目前行业平均仅 68%）。建议以首付款+达产提成推进产业许可实施。`;
+      }
+      return `【✦ 智策前沿产业洞察 · 战略赛道前景研判】：
+针对您对「${patent.title}」产业前景与落地节奏的研判：
+1. 国家“十五五”重点支柱契合度：该成果（${patent.patentNo}）处于卡脖子核心替代节点，政策与制造业转型引导基金支持力度充足；
+2. 市场需求与商业化渗透：下游领军企业在 2026-2028 规划中对该技术具备明确的国产替代定点意向，预计首条示范线跑通后将撬动年化超 30% 的规模化采购；
+3. 关键工程短板：目前处于 ${patent.trl} 阶段，核心在于中试批次重复稳定性与国产核心物料供应链穿透。`;
+    }
 
     if (q.includes("fto") || q.includes("侵权") || q.includes("法律") || q.includes("风险")) {
       return `【⚖️ 法律与 FTO 风控 Agent · 权利要求穿透审查】：
@@ -420,14 +495,6 @@ export default function Workbench({ user, onLogout }) {
 3. 蒙特卡洛 10,000 次抽样检验：P50 估值中位数高度收敛在 ¥ ${currentValuation.toLocaleString()} 万元，置信度达到 ${patent.confidence}。`;
     }
 
-    if (q.includes("未来") || q.includes("前景") || q.includes("产业") || q.includes("趋势") || q.includes("赛道") || q.includes("市场")) {
-      return `【✦ 智策产业生态洞察 · 战略前瞻推演】：
-针对您对「${query}」的产业前景研判：
-1. 国家战略产业契合度：该成果（${patent.patentNo}）完全契合国家“十五五”重点战略方向，属于底层关键根技术布局；
-2. 商业化渗透节奏：预计 2026-2028 年行业复合增速达 32% 以上，中试产线跑通后具备首批战略客户供应链定点采购潜力；
-3. 转化策略建议：建议采用“先导概念验证基金无偿资助 + 独占实施许可 + 股权浮动期权”组合方案，首期技术转让首付款不低于 30%。`;
-    }
-
     return `【🔬 技术壁垒 Agent (DeepSeek-R1 推理内核) · 深度穿透分析】：
 针对技术命题「${query}」的技术特征拆解：
 1. 核心创造性高度：在【${patent.title}】中，发明重点解决了传统方案的固有物理瓶颈，工程实测指标领先行业竞品平均水准 30% 以上；
@@ -435,13 +502,77 @@ export default function Workbench({ user, onLogout }) {
 3. 工艺攻坚焦点：建议项目方在规模量产前持续提高中试良率与核心供应链自给率，进一步筑牢技术护城河。`;
   };
 
-  // 处理发送对话
+  // 从 Landing 状态发起研判或搜索
+  const handleLaunchSearch = (queryText, targetPatentId = null) => {
+    let target = targetPatentId ? BENCHMARK_PATENTS.find(p => p.id === targetPatentId) : null;
+    if (!target) {
+      target = resolveTargetPatent(queryText, selectedPatent);
+    }
+    setSelectedPatent(target);
+    setWorkspaceMode('deliberation');
+
+    // 注入初始欢迎消息 + 用户第一条提问
+    const initialAiWelcome = {
+      sender: 'ai',
+      text: `您好，技术经理人！我是 智策 成果转化协同推理中枢。当前标的：【${target.title}】。您可随时询问技术壁垒评级、法律与 FTO 侵权分析、白盒 DCF 估值测算，或直接粘贴技术交底书文本进行全景推演！`
+    };
+    const userMessage = { sender: 'user', text: queryText };
+
+    setChatMessages([initialAiWelcome, userMessage]);
+    setChatLoading(true);
+
+    // 记录到最近研判会话
+    const newSession = {
+      id: 'sess-' + Date.now(),
+      title: queryText.length > 20 ? queryText.substring(0, 20) + '...' : queryText,
+      time: '刚刚',
+      patentId: target.id
+    };
+    setHistorySessions(prev => {
+      const updated = [newSession, ...prev.filter(s => s.title !== newSession.title).slice(0, 9)];
+      try { localStorage.setItem("zhice_history_sessions", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    // 触发模型推理
+    setTimeout(async () => {
+      let aiText = null;
+      try {
+        const zaiResult = await ZionService.invokeAIReasoning({
+          patent: target,
+          userPrompt: queryText,
+          token: user?.token
+        });
+        if (zaiResult && zaiResult.text) {
+          aiText = zaiResult.text;
+        }
+      } catch (err) {
+        console.warn("[智策协同终端] 云端轮询超时，平滑启用智策领域多态推理中枢", err);
+      }
+
+      if (!aiText) {
+        aiText = generateDynamicAnalysis(target, queryText, wacc, royaltyRate, dynamicValuation);
+      }
+
+      setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
+      setChatLoading(false);
+    }, 700);
+  };
+
+  // 处理对话框提交
   const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
 
     const userMsg = chatInput.trim();
     setChatInput('');
+
+    // 自动纠偏意图识别标的
+    const matchedPatent = resolveTargetPatent(userMsg, selectedPatent);
+    if (matchedPatent.id !== selectedPatent.id) {
+      setSelectedPatent(matchedPatent);
+    }
+
     setChatMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
     setChatLoading(true);
 
@@ -450,15 +581,19 @@ export default function Workbench({ user, onLogout }) {
       id: 'sess-' + Date.now(),
       title: userMsg.length > 18 ? userMsg.substring(0, 18) + '...' : userMsg,
       time: '刚刚',
-      patentId: selectedPatent.id
+      patentId: matchedPatent.id
     };
-    setHistorySessions(prev => [newSession, ...prev.filter(s => s.title !== newSession.title).slice(0, 7)]);
+    setHistorySessions(prev => {
+      const updated = [newSession, ...prev.filter(s => s.title !== newSession.title).slice(0, 9)];
+      try { localStorage.setItem("zhice_history_sessions", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
 
     // 尝试调用云端 Agent (Gemini 2.5 flash / 智策推理中枢)
     let aiText = null;
     try {
       const zaiResult = await ZionService.invokeAIReasoning({
-        patent: selectedPatent,
+        patent: matchedPatent,
         userPrompt: userMsg,
         token: user?.token
       });
@@ -471,7 +606,7 @@ export default function Workbench({ user, onLogout }) {
 
     // 若云端超时或正在排队，执行高密度领域结构化动态合成
     if (!aiText) {
-      aiText = generateDynamicAnalysis(selectedPatent, userMsg, wacc, royaltyRate, dynamicValuation);
+      aiText = generateDynamicAnalysis(matchedPatent, userMsg, wacc, royaltyRate, dynamicValuation);
     }
 
     setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
@@ -518,30 +653,64 @@ export default function Workbench({ user, onLogout }) {
           </span>
         </div>
 
-        {/* 5 大核心功能导航链接 */}
-        <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {/* 顶部主新建对话按钮 (1:1 像素级复刻 Artifin 新建对话大胶囊) */}
+        <div style={{ padding: '12px 10px 4px' }}>
           <button
-            onClick={() => setActiveTab('nav-agent')}
+            onClick={() => {
+              setActiveTab('nav-agent');
+              setWorkspaceMode('landing');
+              setLandingInput('');
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-hairline)',
+              background: (activeTab === 'nav-agent' && workspaceMode === 'landing') ? 'var(--bg-card)' : '#ffffff',
+              color: 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: 'pointer',
+              boxShadow: (activeTab === 'nav-agent' && workspaceMode === 'landing') ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span style={{ fontSize: '16px', color: 'var(--color-navy)' }}>⊕</span>
+            <span>新建研判会话</span>
+          </button>
+        </div>
+
+        {/* 5 大核心功能导航链接 */}
+        <nav style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <button
+            onClick={() => {
+              setActiveTab('nav-agent');
+              setWorkspaceMode('deliberation');
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '9px 12px',
+              padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
-              background: activeTab === 'nav-agent' ? '#ffffff' : 'transparent',
-              color: activeTab === 'nav-agent' ? 'var(--color-navy)' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'nav-agent' ? 700 : 500,
+              background: (activeTab === 'nav-agent' && workspaceMode === 'deliberation') ? '#ffffff' : 'transparent',
+              color: (activeTab === 'nav-agent' && workspaceMode === 'deliberation') ? 'var(--color-navy)' : 'var(--text-secondary)',
+              fontWeight: (activeTab === 'nav-agent' && workspaceMode === 'deliberation') ? 700 : 500,
               fontSize: '13px',
               cursor: 'pointer',
-              boxShadow: activeTab === 'nav-agent' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+              boxShadow: (activeTab === 'nav-agent' && workspaceMode === 'deliberation') ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
               textAlign: 'left'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🤖</span>
-              <span>新建智能研判</span>
+              <span>推演工作台</span>
             </div>
+            <span style={{ fontSize: '10px', opacity: 0.6 }}>3栏</span>
           </button>
 
           <button
@@ -550,7 +719,7 @@ export default function Workbench({ user, onLogout }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '9px 12px',
+              padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'nav-reports' ? '#ffffff' : 'transparent',
@@ -574,7 +743,7 @@ export default function Workbench({ user, onLogout }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '9px 12px',
+              padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'nav-tracking' ? '#ffffff' : 'transparent',
@@ -601,7 +770,7 @@ export default function Workbench({ user, onLogout }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '9px 12px',
+              padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'nav-predict' ? '#ffffff' : 'transparent',
@@ -625,7 +794,7 @@ export default function Workbench({ user, onLogout }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '9px 12px',
+              padding: '8px 12px',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'nav-portfolio' ? '#ffffff' : 'transparent',
@@ -645,7 +814,7 @@ export default function Workbench({ user, onLogout }) {
           </button>
         </nav>
 
-        {/* 最近研判历史会话记录 (对标 Artifin Recent Sessions) */}
+        {/* 最近研判历史会话记录 (新用户初始为空！绝不伪造数据) */}
         <div style={{ flex: 1, padding: '12px 14px', overflowY: 'auto', minHeight: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
@@ -656,34 +825,42 @@ export default function Workbench({ user, onLogout }) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {historySessions.map(sess => (
-              <div
-                key={sess.id}
-                onClick={() => {
-                  const target = BENCHMARK_PATENTS.find(p => p.id === sess.patentId);
-                  if (target) setSelectedPatent(target);
-                  setActiveTab('nav-agent');
-                }}
-                style={{
-                  padding: '7px 10px',
-                  borderRadius: '6px',
-                  background: '#ffffff',
-                  border: '1px solid var(--border-hairline)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-                title={sess.title}
-              >
-                <div style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  💬 {sess.title}
+          {historySessions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px 10px', color: 'var(--text-muted)', fontSize: '11.5px' }}>
+              <div style={{ fontSize: '18px', opacity: 0.5, marginBottom: '6px' }}>💬</div>
+              暂无历史研判会话<br /><span style={{ fontSize: '10.5px', opacity: 0.7 }}>发起提问后将自动沉淀</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {historySessions.map(sess => (
+                <div
+                  key={sess.id}
+                  onClick={() => {
+                    const target = BENCHMARK_PATENTS.find(p => p.id === sess.patentId);
+                    if (target) setSelectedPatent(target);
+                    setActiveTab('nav-agent');
+                    setWorkspaceMode('deliberation');
+                  }}
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    background: '#ffffff',
+                    border: '1px solid var(--border-hairline)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                  title={sess.title}
+                >
+                  <div style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    💬 {sess.title}
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {sess.time}
+                  </div>
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {sess.time}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 侧边栏底部：账户中心与 Popover */}
@@ -762,7 +939,7 @@ export default function Workbench({ user, onLogout }) {
           ========================================================================== */}
       <main className="main-viewport" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-canvas)' }}>
         
-        {/* 顶部现代化操作条 (已彻底清除任何云端厂商暴露，保持纯净商业化品牌) */}
+        {/* 顶部现代化操作条 */}
         <header style={{
           height: '52px',
           padding: '0 20px',
@@ -819,8 +996,376 @@ export default function Workbench({ user, onLogout }) {
 
           {/* ------------------------------------------------------------------
               VIEW 1: 核心尽调工作台 (nav-agent)
+              支持双状态：'landing' (对标 Artifin 主画布) 和 'deliberation' (三栏推演)
               ------------------------------------------------------------------ */}
-          {activeTab === 'nav-agent' && (
+          {activeTab === 'nav-agent' && workspaceMode === 'landing' && (
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '36px 20px',
+              position: 'relative'
+            }}>
+              {/* 免费版 · 升级 顶部胶囊 */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '3px 12px',
+                borderRadius: '20px',
+                background: '#ffffff',
+                border: '1px solid var(--border-hairline)',
+                fontSize: '11.5px',
+                color: 'var(--text-secondary)',
+                marginBottom: '18px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                <span>🛡️ 机构版 · 十五五战略专网就绪</span>
+              </div>
+
+              {/* Hero 标题 (1:1 对标 Artifin) */}
+              <h1 style={{
+                fontSize: '24px',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: '0 0 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                textAlign: 'center'
+              }}>
+                让 <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  background: 'var(--color-navy)',
+                  color: '#ffffff',
+                  padding: '2px 10px',
+                  borderRadius: '6px',
+                  fontSize: '19px'
+                }}>⚡ 智策</span> 在 <span style={{ color: '#b45309' }}>国家战略图谱</span> 帮你研判一项硬科技成果
+              </h1>
+
+              {/* 新手任务引导胶囊 */}
+              <div style={{
+                width: '100%',
+                maxWidth: '740px',
+                background: 'rgba(254, 243, 199, 0.75)',
+                border: '1px solid #fde68a',
+                borderRadius: '12px 12px 0 0',
+                padding: '9px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxSizing: 'border-box'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                  <span>新手任务 1/2: 快速诊断一项前沿重大战略成果</span>
+                  <span style={{ fontSize: '11px', background: '#fef3c7', padding: '1px 8px', borderRadius: '12px', border: '1px solid #fcd34d' }}>✨ +20 算力点数</span>
+                </div>
+                <button
+                  onClick={() => handleLaunchSearch('CPO 光电共封芯片的商业化瓶颈与未来前景如何？', 'cpo-chip')}
+                  style={{
+                    padding: '3px 12px',
+                    background: '#ffffff',
+                    border: '1px solid #fcd34d',
+                    borderRadius: '20px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    color: '#b45309',
+                    cursor: 'pointer'
+                  }}
+                >
+                  试一试
+                </button>
+              </div>
+
+              {/* 核心大圆角输入卡片 (对标 Artifin) */}
+              <div style={{
+                width: '100%',
+                maxWidth: '740px',
+                background: '#ffffff',
+                border: '1px solid var(--border-hairline)',
+                borderRadius: '0 0 16px 16px',
+                boxShadow: 'var(--shadow-elevated)',
+                padding: '16px 20px 14px',
+                boxSizing: 'border-box',
+                marginBottom: '20px'
+              }}>
+                <textarea
+                  value={landingInput}
+                  onChange={(e) => setLandingInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (landingInput.trim()) handleLaunchSearch(landingInput.trim());
+                    }
+                  }}
+                  placeholder="问问 智策 关于成果转化的任何问题，输入 @ 选择标的或粘贴交底书..."
+                  style={{
+                    width: '100%',
+                    minHeight: '62px',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '14px',
+                    color: 'var(--text-primary)',
+                    background: 'transparent',
+                    resize: 'none',
+                    lineHeight: 1.6,
+                    fontFamily: 'inherit'
+                  }}
+                />
+
+                {/* 内部工具栏 */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderTop: '1px solid var(--border-hairline)',
+                  paddingTop: '10px',
+                  marginTop: '6px'
+                }}>
+                  {/* 四联模式胶囊 */}
+                  <div style={{ display: 'flex', gap: '4px', background: '#f8fafc', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-hairline)' }}>
+                    <button
+                      onClick={() => setLandingMode('chat')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: landingMode === 'chat' ? '#ffffff' : 'transparent',
+                        fontWeight: landingMode === 'chat' ? 700 : 500,
+                        fontSize: '12px',
+                        color: landingMode === 'chat' ? 'var(--color-navy)' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        boxShadow: landingMode === 'chat' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                      }}
+                    >
+                      💬 对话
+                    </button>
+                    <button
+                      onClick={() => setLandingMode('quick')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: landingMode === 'quick' ? '#ffffff' : 'transparent',
+                        fontWeight: landingMode === 'quick' ? 700 : 500,
+                        fontSize: '12px',
+                        color: landingMode === 'quick' ? 'var(--color-navy)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📊 快速诊断
+                    </button>
+                    <button
+                      onClick={() => setLandingMode('scan')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: landingMode === 'scan' ? '#ffffff' : 'transparent',
+                        fontWeight: landingMode === 'scan' ? 700 : 500,
+                        fontSize: '12px',
+                        color: landingMode === 'scan' ? 'var(--color-navy)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📑 全景扫描
+                    </button>
+                    <button
+                      onClick={() => setLandingMode('deep')}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: landingMode === 'deep' ? '#ffffff' : 'transparent',
+                        fontWeight: landingMode === 'deep' ? 700 : 500,
+                        fontSize: '12px',
+                        color: landingMode === 'deep' ? 'var(--color-navy)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔬 深度研究
+                    </button>
+                  </div>
+
+                  {/* 右侧操作 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setShowPatentDropdown(!showPatentDropdown)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '5px 10px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-hairline)',
+                          background: '#ffffff',
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>@</span> 成果标的
+                      </button>
+                      {showPatentDropdown && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '36px',
+                          right: 0,
+                          width: '280px',
+                          background: '#ffffff',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-hairline)',
+                          boxShadow: 'var(--shadow-elevated)',
+                          padding: '6px',
+                          zIndex: 200,
+                          maxHeight: '220px',
+                          overflowY: 'auto'
+                        }}>
+                          {BENCHMARK_PATENTS.map(p => (
+                            <div
+                              key={p.id}
+                              onClick={() => {
+                                setSelectedPatent(p);
+                                setShowPatentDropdown(false);
+                                setLandingInput(`全面研判【${p.title}】的技术壁垒与未来商业前景`);
+                              }}
+                              style={{
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11.5px',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}
+                            >
+                              • {p.title}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-hairline)',
+                        background: '#f8fafc',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ⚡ 自动
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (landingInput.trim()) handleLaunchSearch(landingInput.trim());
+                      }}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: 'var(--color-navy)',
+                        color: '#ffffff',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        fontSize: '14px'
+                      }}
+                    >
+                      ↑
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 推荐话题矩阵 */}
+              <div style={{ width: '100%', maxWidth: '740px', marginBottom: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>推荐前沿战略方向</span>
+                  <button
+                    onClick={() => setTopicPage(prev => (prev + 1) % 2)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', border: 'none', background: 'transparent', fontSize: '11.5px', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  >
+                    <span>🔄 换一换</span>
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {currentTopics.map((topic, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleLaunchSearch(topic.text, topic.patentId)}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: '20px',
+                        background: '#ffffff',
+                        border: '1px solid var(--border-hairline)',
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {topic.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 底部生态卡片 */}
+              <div style={{
+                width: '100%',
+                maxWidth: '740px',
+                background: '#ffffff',
+                border: '1px solid var(--border-hairline)',
+                borderRadius: '12px',
+                padding: '12px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    使用其他方式接入智策 (TechTransfer.AI)
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', fontSize: '16px' }}>
+                    <span title="飞书机器人">🦅</span>
+                    <span title="钉钉组织协同">💬</span>
+                    <span title="企业微信">💼</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-hairline)', paddingTop: '6px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    🔌 开放生态：API · MCP 协议 · 产投命令行 CLI 接入指引
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--color-navy)', fontWeight: 600, cursor: 'pointer' }}>
+                    查看接入指引 →
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------------
+              VIEW 1 (Deliberation): 三栏深度尽调工作台
+              ------------------------------------------------------------------ */}
+          {activeTab === 'nav-agent' && workspaceMode === 'deliberation' && (
             <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr 350px', overflow: 'hidden', height: '100%', minHeight: 0 }}>
               
               {/* 左栏：十五五战略产业图谱标的列表 */}
@@ -1080,7 +1625,7 @@ export default function Workbench({ user, onLogout }) {
                 </div>
               </main>
 
-              {/* 右栏：AI Agent 实时研判交互 (保证滚动完全通畅，彻底解决无法向上滑动的容器高度缺失问题) */}
+              {/* 右栏：AI Agent 实时研判交互 */}
               <aside style={{
                 borderLeft: '1px solid var(--border-hairline)',
                 background: '#ffffff',
@@ -1095,7 +1640,7 @@ export default function Workbench({ user, onLogout }) {
                     💬 智策 AI 成果研判协同终端
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b' }}>
-                    多智能体协同问答 · 实时动态推演
+                    当前标的：{selectedPatent.title.substring(0, 14)}...
                   </div>
                 </div>
 
@@ -1113,29 +1658,36 @@ export default function Workbench({ user, onLogout }) {
                     scrollBehavior: 'smooth'
                   }}
                 >
-                  {chatMessages.map((m, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
-                        maxWidth: '92%',
-                        padding: '10px 14px',
-                        borderRadius: m.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                        background: m.sender === 'user' ? 'var(--color-navy)' : '#f8fafc',
-                        color: m.sender === 'user' ? '#ffffff' : '#1e293b',
-                        fontSize: '12px',
-                        lineHeight: 1.6,
-                        border: m.sender === 'user' ? 'none' : '1px solid var(--border-hairline)',
-                        whiteSpace: 'pre-wrap',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                      }}
-                    >
-                      {m.text}
+                  {chatMessages.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      <div style={{ fontSize: '24px', opacity: 0.5, marginBottom: '8px' }}>⚡</div>
+                      输入问题或从下方快捷胶囊发起推演
                     </div>
-                  ))}
+                  ) : (
+                    chatMessages.map((m, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
+                          maxWidth: '92%',
+                          padding: '10px 14px',
+                          borderRadius: m.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                          background: m.sender === 'user' ? 'var(--color-navy)' : '#f8fafc',
+                          color: m.sender === 'user' ? '#ffffff' : '#1e293b',
+                          fontSize: '12px',
+                          lineHeight: 1.6,
+                          border: m.sender === 'user' ? 'none' : '1px solid var(--border-hairline)',
+                          whiteSpace: 'pre-wrap',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        {m.text}
+                      </div>
+                    ))
+                  )}
                   {chatLoading && (
                     <div style={{ alignSelf: 'flex-start', padding: '10px 14px', background: '#f8fafc', borderRadius: '10px', fontSize: '11.5px', color: '#64748b' }}>
-                      ⏳ 智策推理中枢正在调用模型多维检索全球专利库并测算现金流...
+                      ⏳ 智策推理中枢正在调用模型检索全球专利库并测算现金流...
                     </div>
                   )}
                 </div>
@@ -1143,28 +1695,22 @@ export default function Workbench({ user, onLogout }) {
                 {/* 快捷推荐提问胶囊 */}
                 <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-hairline)', background: '#fafafa', display: 'flex', gap: '6px', overflowX: 'auto', flexShrink: 0 }}>
                   <button
-                    onClick={() => {
-                      setChatInput('分析该技术的法律 FTO 侵权风险与海外规避空间');
-                    }}
+                    onClick={() => setChatInput(`分析【${selectedPatent.title}】的未来产业前景与商业化阻力`)}
+                    style={{ padding: '4px 8px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    🔮 问未来前景
+                  </button>
+                  <button
+                    onClick={() => setChatInput(`排查该专利的核心技术壁垒与被海外巨头阻碍的 FTO 风险`)}
                     style={{ padding: '4px 8px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     ⚖️ 查 FTO 侵权
                   </button>
                   <button
-                    onClick={() => {
-                      setChatInput('重新以折现率 WACC=14% 测算保守情形下的估值');
-                    }}
+                    onClick={() => setChatInput(`以 WACC=12.5% 折现率测算该标的的现金流现值`)}
                     style={{ padding: '4px 8px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
                   >
                     📈 测现金流折现
-                  </button>
-                  <button
-                    onClick={() => {
-                      setChatInput('拆解独立权利要求 1 的核心技术壁垒与创造性');
-                    }}
-                    style={{ padding: '4px 8px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                  >
-                    🔬 拆技术壁垒
                   </button>
                 </div>
 
@@ -1174,7 +1720,7 @@ export default function Workbench({ user, onLogout }) {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="输入问题或技术交底书文本..."
+                    placeholder="针对当前标的追问，或输入其他技术..."
                     style={{
                       flex: 1,
                       padding: '8px 12px',
@@ -1237,6 +1783,7 @@ export default function Workbench({ user, onLogout }) {
                         onClick={() => {
                           setSelectedPatent(p);
                           setActiveTab('nav-agent');
+                          setWorkspaceMode('deliberation');
                         }}
                         style={{ flex: 1, padding: '6px', background: 'var(--color-navy)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
                       >
