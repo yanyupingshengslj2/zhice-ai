@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MonteCarloModal from '../MonteCarlo/MonteCarloModal';
+import UploadDisclosureModal from './UploadDisclosureModal';
+import ExportReportModal from './ExportReportModal';
+import EcosystemModal from './EcosystemModal';
 import { ZionService } from '../../services/zionClient';
 
 export const BENCHMARK_PATENTS = [
@@ -358,7 +361,15 @@ export default function Workbench({ user, onLogout }) {
 
   // Patent & Category Filter
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'pillar' | 'future'
+  const [patentsList, setPatentsList] = useState(BENCHMARK_PATENTS);
   const [selectedPatent, setSelectedPatent] = useState(BENCHMARK_PATENTS[0]);
+
+  // 新增模态弹窗状态
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showEcosystemModal, setShowEcosystemModal] = useState(false);
+  const [ecosystemInitialTab, setEcosystemInitialTab] = useState('api');
+  const [openTraces, setOpenTraces] = useState({});
   
   // Interactive DCF Parameters
   const [wacc, setWacc] = useState(12.5); // %
@@ -372,7 +383,7 @@ export default function Workbench({ user, onLogout }) {
   );
 
   // Filtered Patents
-  const filteredPatents = BENCHMARK_PATENTS.filter(p => {
+  const filteredPatents = patentsList.filter(p => {
     if (categoryFilter === 'all') return true;
     return p.category === categoryFilter;
   });
@@ -433,30 +444,77 @@ export default function Workbench({ user, onLogout }) {
   const resolveTargetPatent = (query, currentPatent) => {
     const q = query.toLowerCase();
     if (q.includes("cpo") || q.includes("光电共封") || q.includes("微电子") || q.includes("算力芯片")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "cpo-chip") || currentPatent;
+      return patentsList.find(p => p.id === "cpo-chip") || currentPatent;
     }
     if (q.includes("adc") || q.includes("双抗") || q.includes("抗体") || q.includes("肿瘤") || q.includes("药")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "adc-bio") || currentPatent;
+      return patentsList.find(p => p.id === "adc-bio") || currentPatent;
     }
     if (q.includes("固态") || q.includes("电池") || q.includes("电解质") || q.includes("储能")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "solid-battery") || currentPatent;
+      return patentsList.find(p => p.id === "solid-battery") || currentPatent;
     }
     if (q.includes("机器人") || q.includes("减速器") || q.includes("关节") || q.includes("谐波")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "robotics-harmonic") || currentPatent;
+      return patentsList.find(p => p.id === "robotics-harmonic") || currentPatent;
     }
     if (q.includes("火箭") || q.includes("发动机") || q.includes("航天") || q.includes("甲烷") || q.includes("推力")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "aerospace-rocket") || currentPatent;
+      return patentsList.find(p => p.id === "aerospace-rocket") || currentPatent;
     }
     if (q.includes("evtol") || q.includes("低空") || q.includes("飞行器") || q.includes("旋翼")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "evtol-lowaltitude") || currentPatent;
+      return patentsList.find(p => p.id === "evtol-lowaltitude") || currentPatent;
     }
     if (q.includes("量子") || q.includes("纠缠") || q.includes("雷达")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "quantum-radar") || currentPatent;
+      return patentsList.find(p => p.id === "quantum-radar") || currentPatent;
     }
     if (q.includes("具身") || q.includes("人形") || q.includes("大模型") || q.includes("端到端")) {
-      return BENCHMARK_PATENTS.find(p => p.id === "embodied-ai") || currentPatent;
+      return patentsList.find(p => p.id === "embodied-ai") || currentPatent;
     }
     return currentPatent;
+  };
+
+  // 导入用户上传的成果交底书并立即初始化工作台
+  const handleImportPatent = (newPatent) => {
+    setPatentsList(prev => [newPatent, ...prev]);
+    setSelectedPatent(newPatent);
+    setWorkspaceMode('deliberation');
+    setActiveTab('nav-agent');
+
+    const initialText = `【✦ 重大成果交底书解析载入完成 · ${newPatent.title}】：
+系统已基于文档 AST 语法树完成特征提取：
+1. 战略赛道与分类：${newPatent.pillarType} · 拟分配 IPC：${newPatent.ipcClass}；
+2. 工程成熟度定级：${newPatent.trl}；
+3. 白盒现金流折现估值：建议基准过会值 ${newPatent.valuation}（置信度 ${newPatent.confidence}）；
+4. 核心创新特征：${newPatent.summary}
+
+4 大专业 Agent 协同博弈思考链已就绪，请在下方发起针对性研判或过会审查提问。`;
+
+    const debateTrace = {
+      duration: "1.2s",
+      agents: (newPatent.agentsDebate || []).map(a => ({
+        name: a.agent,
+        role: a.model,
+        verdict: a.verdict,
+        thought: a.thought,
+        icon: a.avatar
+      })),
+      consensus: (newPatent.agentsDebate?.[3]?.thought) || "产投协调中枢建议：技术壁垒已跨越死亡谷前哨，推荐推进作价入股或排他独占许可。"
+    };
+
+    setChatMessages([
+      { id: 'msg-init-' + Date.now(), sender: 'ai', text: initialText, debateTrace }
+    ]);
+    setOpenTraces({ 0: true });
+
+    // 记录到会话历史
+    const newSession = {
+      id: 'sess-' + Date.now(),
+      title: '交底书解析: ' + newPatent.title.substring(0, 14) + '...',
+      time: '刚刚',
+      patentId: newPatent.id
+    };
+    setHistorySessions(prev => {
+      const updated = [newSession, ...prev.filter(s => s.patentId !== newPatent.id).slice(0, 9)];
+      try { localStorage.setItem("zhice_history_sessions", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   };
 
   // 高深度技术结构化生成器 (动态结合用户问题与专利特征)
@@ -554,7 +612,23 @@ export default function Workbench({ user, onLogout }) {
         aiText = generateDynamicAnalysis(target, queryText, wacc, royaltyRate, dynamicValuation);
       }
 
-      setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
+      const debateTrace = {
+        duration: (1.2 + Math.random() * 0.6).toFixed(1) + "s",
+        agents: (target.agentsDebate || []).map(a => ({
+          name: a.agent,
+          role: a.model,
+          verdict: a.verdict,
+          thought: a.thought,
+          icon: a.avatar
+        })),
+        consensus: (target.agentsDebate?.[3]?.thought) || "产投协调中枢达成共识：技术壁垒与成熟度符合十五五战略投决标准，建议推进概念验证与中试配套。"
+      };
+
+      setChatMessages(prev => {
+        const nextIdx = prev.length;
+        setOpenTraces(o => ({ ...o, [nextIdx]: true }));
+        return [...prev, { id: 'msg-ai-' + Date.now(), sender: 'ai', text: aiText, debateTrace }];
+      });
       setChatLoading(false);
     }, 700);
   };
@@ -573,7 +647,7 @@ export default function Workbench({ user, onLogout }) {
       setSelectedPatent(matchedPatent);
     }
 
-    setChatMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
+    setChatMessages(prev => [...prev, { id: 'msg-user-' + Date.now(), sender: 'user', text: userMsg }]);
     setChatLoading(true);
 
     // 动态沉淀到左下角“最近研判记录”
@@ -609,7 +683,23 @@ export default function Workbench({ user, onLogout }) {
       aiText = generateDynamicAnalysis(matchedPatent, userMsg, wacc, royaltyRate, dynamicValuation);
     }
 
-    setChatMessages(prev => [...prev, { sender: 'ai', text: aiText }]);
+    const debateTrace = {
+      duration: (1.3 + Math.random() * 0.6).toFixed(1) + "s",
+      agents: (matchedPatent.agentsDebate || []).map(a => ({
+        name: a.agent,
+        role: a.model,
+        verdict: a.verdict,
+        thought: a.thought,
+        icon: a.avatar
+      })),
+      consensus: (matchedPatent.agentsDebate?.[3]?.thought) || "产投协调中枢达成共识：技术壁垒与 FTO 审查合格，建议推进作价入股评审。"
+    };
+
+    setChatMessages(prev => {
+      const nextIdx = prev.length;
+      setOpenTraces(o => ({ ...o, [nextIdx]: true }));
+      return [...prev, { id: 'msg-ai-' + Date.now(), sender: 'ai', text: aiText, debateTrace }];
+    });
     setChatLoading(false);
   };
 
@@ -1196,6 +1286,29 @@ export default function Workbench({ user, onLogout }) {
 
                   {/* 右侧操作 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* 上传技术交底书附件按钮 */}
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      title="上传科技成果交底书或专利 PDF"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '5px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-hairline)',
+                        background: '#ffffff',
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-navy)'; e.currentTarget.style.color = 'var(--color-navy)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-hairline)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                    >
+                      <span>📎</span> 上传交底书
+                    </button>
+
                     <div style={{ position: 'relative' }}>
                       <button
                         onClick={() => setShowPatentDropdown(!showPatentDropdown)}
@@ -1229,7 +1342,7 @@ export default function Workbench({ user, onLogout }) {
                           maxHeight: '220px',
                           overflowY: 'auto'
                         }}>
-                          {BENCHMARK_PATENTS.map(p => (
+                          {patentsList.map(p => (
                             <div
                               key={p.id}
                               onClick={() => {
@@ -1344,17 +1457,47 @@ export default function Workbench({ user, onLogout }) {
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     使用其他方式接入智策 (TechTransfer.AI)
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', fontSize: '16px' }}>
-                    <span title="飞书机器人">🦅</span>
-                    <span title="钉钉组织协同">💬</span>
-                    <span title="企业微信">💼</span>
+                  <div style={{ display: 'flex', gap: '10px', fontSize: '18px' }}>
+                    <span
+                      onClick={() => { setEcosystemInitialTab('bot'); setShowEcosystemModal(true); }}
+                      title="飞书组织协同机器人"
+                      style={{ cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      🦅
+                    </span>
+                    <span
+                      onClick={() => { setEcosystemInitialTab('bot'); setShowEcosystemModal(true); }}
+                      title="钉钉投研小助手"
+                      style={{ cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      💬
+                    </span>
+                    <span
+                      onClick={() => { setEcosystemInitialTab('bot'); setShowEcosystemModal(true); }}
+                      title="企业微信审批专线"
+                      style={{ cursor: 'pointer', padding: '2px 4px', borderRadius: '4px', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      💼
+                    </span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-hairline)', paddingTop: '6px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span
+                    onClick={() => { setEcosystemInitialTab('api'); setShowEcosystemModal(true); }}
+                    style={{ fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  >
                     🔌 开放生态：API · MCP 协议 · 产投命令行 CLI 接入指引
                   </span>
-                  <span style={{ fontSize: '11px', color: 'var(--color-navy)', fontWeight: 600, cursor: 'pointer' }}>
+                  <span
+                    onClick={() => { setEcosystemInitialTab('api'); setShowEcosystemModal(true); }}
+                    style={{ fontSize: '11px', color: 'var(--color-navy)', fontWeight: 600, cursor: 'pointer' }}
+                  >
                     查看接入指引 →
                   </span>
                 </div>
@@ -1370,6 +1513,28 @@ export default function Workbench({ user, onLogout }) {
               
               {/* 左栏：十五五战略产业图谱标的列表 */}
               <aside style={{ borderRight: '1px solid var(--border-hairline)', background: 'var(--bg-sidebar)', padding: '14px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b' }}>重大成果标的库</span>
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    style={{
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      background: '#ffffff',
+                      border: '1px solid var(--border-hairline)',
+                      borderRadius: '4px',
+                      color: 'var(--color-navy)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>⊕</span> 导入新交底书
+                  </button>
+                </div>
+
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
                   <button
                     onClick={() => setCategoryFilter('all')}
@@ -1385,7 +1550,7 @@ export default function Workbench({ user, onLogout }) {
                       cursor: 'pointer'
                     }}
                   >
-                    全部 ({BENCHMARK_PATENTS.length})
+                    全部 ({patentsList.length})
                   </button>
                   <button
                     onClick={() => setCategoryFilter('pillar')}
@@ -1544,22 +1709,43 @@ export default function Workbench({ user, onLogout }) {
                     <div style={{ fontSize: '11.5px', color: '#64748b' }}>
                       蒙特卡洛 10,000 次随机抽样置信度：<strong style={{ color: 'var(--signal-green)' }}>{selectedPatent.confidence}</strong>
                     </div>
-                    <button
-                      onClick={() => setShowMonteCarlo(true)}
-                      style={{
-                        padding: '6px 14px',
-                        background: 'var(--arti-gold-gradient)',
-                        border: '1px solid var(--arti-gold-border)',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: 'var(--arti-gold-text)',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 6px rgba(217, 119, 6, 0.15)'
-                      }}
-                    >
-                      🎲 展开蒙特卡洛 10,000 次仿真
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => setShowExportModal(true)}
+                        style={{
+                          padding: '6px 14px',
+                          background: '#0f172a',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#ffffff',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(15, 23, 42, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <span>📥</span> 导出过会投决书 (PDF/Word)
+                      </button>
+                      <button
+                        onClick={() => setShowMonteCarlo(true)}
+                        style={{
+                          padding: '6px 14px',
+                          background: 'var(--arti-gold-gradient)',
+                          border: '1px solid var(--arti-gold-border)',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: 'var(--arti-gold-text)',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 6px rgba(217, 119, 6, 0.15)'
+                        }}
+                      >
+                        🎲 展开蒙特卡洛 10,000 次仿真
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1681,7 +1867,81 @@ export default function Workbench({ user, onLogout }) {
                           boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                         }}
                       >
-                        {m.text}
+                        {m.sender === 'ai' && m.debateTrace && (
+                          <div style={{
+                            marginBottom: '10px',
+                            background: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                          }}>
+                            <div
+                              onClick={() => setOpenTraces(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '6px 10px',
+                                background: '#f8fafc',
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                color: '#475569',
+                                fontWeight: 600,
+                                userSelect: 'none'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>🧠</span>
+                                <span style={{ color: 'var(--color-navy)', fontWeight: 700 }}>多智能体协同博弈思考链</span>
+                                <span style={{ fontSize: '10px', color: '#94a3b8' }}>({m.debateTrace.duration || '1.4s'})</span>
+                              </div>
+                              <span style={{ fontSize: '10.5px', color: '#1d4ed8' }}>
+                                {openTraces[idx] ? '▲ 收起' : '▼ 展开思考'}
+                              </span>
+                            </div>
+
+                            {openTraces[idx] && (
+                              <div style={{
+                                padding: '8px 10px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                borderTop: '1px solid #f1f5f9',
+                                background: '#ffffff'
+                              }}>
+                                {m.debateTrace.agents?.map((ag, aIdx) => (
+                                  <div key={aIdx} style={{ fontSize: '11px', borderLeft: '2px solid #cbd5e1', paddingLeft: '8px' }}>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span>{ag.icon}</span>
+                                      <span>{ag.name}</span>
+                                      <span style={{ color: '#1d4ed8', fontWeight: 600, marginLeft: '4px' }}>[{ag.verdict}]</span>
+                                    </div>
+                                    <div style={{ color: '#64748b', fontSize: '10.5px', marginTop: '2px', lineHeight: 1.4 }}>
+                                      {ag.thought}
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {m.debateTrace.consensus && (
+                                  <div style={{
+                                    marginTop: '4px',
+                                    padding: '5px 8px',
+                                    background: '#ecfdf5',
+                                    borderRadius: '4px',
+                                    border: '1px solid #a7f3d0',
+                                    fontSize: '11px',
+                                    color: '#065f46',
+                                    fontWeight: 600
+                                  }}>
+                                    🎯 {m.debateTrace.consensus}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div>{m.text}</div>
                       </div>
                     ))
                   )}
@@ -2068,6 +2328,30 @@ export default function Workbench({ user, onLogout }) {
           onClose={() => setShowMonteCarlo(false)}
         />
       )}
+
+      {/* 科技成果交底书智能解析上传弹窗 */}
+      <UploadDisclosureModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onImportPatent={handleImportPatent}
+      />
+
+      {/* 成果转化投决书一键导出弹窗 */}
+      <ExportReportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        patent={selectedPatent}
+        wacc={wacc}
+        royaltyRate={royaltyRate}
+        dynamicValuation={dynamicValuation}
+      />
+
+      {/* 开放生态与多渠道接入中枢弹窗 */}
+      <EcosystemModal
+        isOpen={showEcosystemModal}
+        onClose={() => setShowEcosystemModal(false)}
+        initialTab={ecosystemInitialTab}
+      />
     </div>
   );
 }
