@@ -3,6 +3,9 @@ import MonteCarloModal from '../MonteCarlo/MonteCarloModal';
 import UploadDisclosureModal from './UploadDisclosureModal';
 import ExportReportModal from './ExportReportModal';
 import EcosystemModal from './EcosystemModal';
+import ApprovalGatekeeperModal from './ApprovalGatekeeperModal';
+import AuditTraceDrawer from './AuditTraceDrawer';
+import DecisionJournalingCard from './DecisionJournalingCard';
 import { ZionService } from '../../services/zionClient';
 
 export const BENCHMARK_PATENTS = [
@@ -378,6 +381,8 @@ export default function Workbench({ user, onLogout }) {
   // 新增模态弹窗状态
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showGatekeeper, setShowGatekeeper] = useState(false);
+  const [showTraceDrawer, setShowTraceDrawer] = useState(false);
   const [showEcosystemModal, setShowEcosystemModal] = useState(false);
   const [ecosystemInitialTab, setEcosystemInitialTab] = useState('api');
   const [openTraces, setOpenTraces] = useState({});
@@ -1834,13 +1839,34 @@ export default function Workbench({ user, onLogout }) {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                      蒙特卡洛 10,000 次随机抽样置信度：<strong style={{ color: 'var(--signal-green)' }}>{selectedPatent.confidence}</strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ fontSize: '11.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>蒙特卡洛 10,000 次置信度：<strong style={{ color: 'var(--signal-green)' }}>{selectedPatent.confidence}</strong></span>
+                      <span style={{ fontSize: '10px', background: '#fee2e2', color: '#b91c1c', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                        R4 级重大标的 · L1 级辅助自治
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => setShowExportModal(true)}
+                        onClick={() => setShowTraceDrawer(true)}
+                        style={{
+                          padding: '6px 12px',
+                          background: '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#38bdf8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <span>🔍</span> 审计 Trace 探针
+                      </button>
+                      <button
+                        onClick={() => setShowGatekeeper(true)}
                         style={{
                           padding: '6px 14px',
                           background: '#0f172a',
@@ -1856,7 +1882,7 @@ export default function Workbench({ user, onLogout }) {
                           gap: '5px'
                         }}
                       >
-                        <span>📥</span> 导出过会投决书 (PDF/Word)
+                        <span>🛡️</span> 双人会签导出投决书
                       </button>
                       <button
                         onClick={() => setShowMonteCarlo(true)}
@@ -1938,6 +1964,9 @@ export default function Workbench({ user, onLogout }) {
                     ))}
                   </div>
                 </div>
+
+                {/* ARTi 级成果转化投资判断复盘沙盘 (让判断开始复利) */}
+                <DecisionJournalingCard patent={selectedPatent} />
               </main>
               )}
 
@@ -2485,6 +2514,24 @@ export default function Workbench({ user, onLogout }) {
         isOpen={showEcosystemModal}
         onClose={() => setShowEcosystemModal(false)}
         initialTab={ecosystemInitialTab}
+      />
+
+      {/* R4 级重大标的 · 双人会签授权守门员 */}
+      <ApprovalGatekeeperModal
+        isOpen={showGatekeeper}
+        onClose={() => setShowGatekeeper(false)}
+        patent={selectedPatent}
+        onApproveSuccess={() => {
+          setShowGatekeeper(false);
+          setShowExportModal(true);
+        }}
+      />
+
+      {/* 全链路 Trace 审计探针抽屉 */}
+      <AuditTraceDrawer
+        isOpen={showTraceDrawer}
+        onClose={() => setShowTraceDrawer(false)}
+        patent={selectedPatent}
       />
     </div>
   );
