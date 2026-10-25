@@ -48,3 +48,9 @@
   1. 登录鉴权卡片必须支持“顶部滑动选项卡（`[🔐 登录/注册]` vs `[✨ 平台权益]`）+ 屏幕触摸手势（Touch Swipe Left/Right）”，默认优先凸显登录/注册表单；
   2. 工作台深度推演态必须支持移动端三栏分步切换顶栏（`[📑 标的库]`、`[📊 评审研报]`、`[💬 AI 协同]`）与侧边栏抽屉式收折（Hamburger Drawer）；
   3. 严禁界面出现横向截断或按钮被推出视口导致用户无法点击。
+
+## 条款 12：移动端变量声明完整性与容灾保护网关（Variable Integrity & Error Boundary Fail-Safe）
+- **反模式 (Antipattern)**：在 JSX 响应式条件分支（如 `{isMobile && mobileSidebarOpen && ...}`）中直接使用未经 `useState` 显式声明的变量。在 PC 端由于 `isMobile` 为 `false` 触发逻辑短路保护（Short-Circuiting），异常被隐蔽；而在真机移动端 `isMobile` 为 `true`，立即触发 `ReferenceError` 导致 React 根节点整个卸载，造成致命白屏（White Screen of Death）。
+- **正向规范 (Best Practice)**：
+  1. 移动端所有的抽屉状态、手势偏移量及弹窗标志位，必须具有显式、完整的 `useState` 初始生命周期声明（如 `const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);`）。
+  2. 根应用组件 `App.jsx` 必须包裹全局 React `<ErrorBoundary>` 错误捕获网关，严禁任何单个子组件的运行时微扰动导致整个系统崩溃成白屏；必须提供自愈式重连界面与异常上报，保障用户资产完好无损。
