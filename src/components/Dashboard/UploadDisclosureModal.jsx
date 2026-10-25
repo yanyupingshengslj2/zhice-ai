@@ -87,7 +87,7 @@ export default function UploadDisclosureModal({ isOpen, onClose, onImportPatent 
     const finalPatent = {
       id: "funnel-" + Date.now(),
       title: funnelResult.zionInputArgs.patent_title,
-      patentNo: `CN202510${Math.floor(100000 + Math.random() * 900000)}.X (交底书申报)`,
+      patentNo: funnelResult.meta.patentNo || (`CN202510${Math.floor(100000 + Math.random() * 900000)}.X (交底书申报)`),
       ipcClass: funnelResult.zionInputArgs.ipc_classification,
       pillarType: funnelResult.zionInputArgs.strategic_pillar,
       category: "pillar",
