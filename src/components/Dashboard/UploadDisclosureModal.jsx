@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { extractPatentFunnelPayload } from '../../utils/patentFunnelExtractor';
+import { extractPdfText } from '../../utils/pdfReader';
 import { ZionService } from '../../services/zionClient';
 
 export default function UploadDisclosureModal({ isOpen, onClose, onImportPatent }) {
@@ -166,22 +167,21 @@ export default function UploadDisclosureModal({ isOpen, onClose, onImportPatent 
     }
   };
 
-  const processFile = (file) => {
+  const processFile = async (file) => {
     const sizeStr = (file.size / 1024 / 1024).toFixed(1) + " MB";
+    let textContent = '';
 
-    // 读取文本内容
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const textContent = event.target.result || '';
-      runMultiStageParsing(file.name, sizeStr, textContent);
-    };
-
-    if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-      reader.readAsText(file);
-    } else {
-      // 对 PDF / Word 文件尝试以文本流读取首段或根据文件名执行高容错漏斗
-      reader.readAsText(file);
+    try {
+      if (file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf')) {
+        textContent = await extractPdfText(file);
+      } else if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        textContent = await file.text();
+      }
+    } catch (e) {
+      console.warn("文件直接提取异常，启动漏斗容错:", e);
     }
+
+    runMultiStageParsing(file.name, sizeStr, textContent);
   };
 
   return (
