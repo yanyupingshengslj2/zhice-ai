@@ -367,6 +367,7 @@ export default function Workbench({ user, onLogout }) {
   // 移动端自适应与三栏切换状态
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
   const [mobileDeliberationTab, setMobileDeliberationTab] = useState('report'); // 'patents' | 'report' | 'chat'
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
